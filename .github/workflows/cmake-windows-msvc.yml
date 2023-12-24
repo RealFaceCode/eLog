@@ -1,0 +1,28 @@
+name: C++ CI on Windows
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        compiler: ['msvc']
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure with CMake
+        run: cmake -B build -S test
+
+      - name: Build with CMake
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: ctest --test-dir build
