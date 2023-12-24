@@ -102,13 +102,6 @@ namespace eLog
         template <typename T, typename... Args>
         constexpr Scope<T> makeScope(Args &&... args);
 
-
-        template<typename... Args, std::size_t... Is>
-        void apply_from_tuple(std::string& str, const std::tuple<Args...>& t, std::index_sequence<Is...>);
-
-        template<typename... Args>
-        void apply_from_tuple(std::string& str, const std::tuple<Args...>& t);
-
 #ifdef __clang__
         using SourceLoc = std::experimental::source_location;
 #else
@@ -165,24 +158,14 @@ namespace eLog
     namespace out
     {
         template <typename... Args>
-        struct ArgHolder
-        {
-        public:
-            explicit ArgHolder(Args&&... args);
-
-            std::tuple<Args...> mArgs;
-        };
-        
-        template <typename... Args>
         struct Msg
         {
         public:
-            explicit Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, const ArgHolder<Args...>& args);
+            explicit Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc);
             defines::Scope<defines::LogLevel> mLevel;
             defines::Scope<defines::StringBuf> mLabel;
             defines::Scope<defines::SourceLoc> mLoc;
             defines::Scope<defines::StringBuf> mMsg;
-            defines::Scope<ArgHolder<Args...>> mArgs;
         };
 
         template <typename... Args>
@@ -201,10 +184,6 @@ namespace eLog
 
         void Log(defines::OStream& stream, const defines::StringBuf& out);
     } // namespace out
-
-    void log(defines::LogLevel level, defines::View msg, defines::Label label = "", defines::SourceLoc loc = SourceLoc::current());
-    template <typename... Args>
-    void logV(defines::LogLevel level, defines::View msg, out::ArgHolder<Args...> args ,defines::Label label = "", defines::SourceLoc loc = SourceLoc::current());
 } // namespace eLog
 
 // implementation
@@ -223,18 +202,7 @@ namespace eLog
         {
             return std::make_unique<T>(std::forward(args...));
         }
-        
-        template<typename... Args, std::size_t... Is>
-        void apply_from_tuple(std::string& str, const std::tuple<Args...>& t, std::index_sequence<Is...>)
-        {
-            str = std::vformat(str, std::make_format_args(std::get<Is>(t)...));
-        }
-
-        template<typename... Args>
-        void apply_from_tuple(std::string& str, const std::tuple<Args...>& t)
-        {
-            apply_from_tuple(str, t, std::index_sequence_for<Args...>{});
-        }
+    
     } // namespace defines
 
     namespace src
@@ -322,10 +290,7 @@ namespace eLog
     namespace out
     {
         template <typename... Args>
-        ArgHolder<Args...>::ArgHolder(Args &&... args) : mArgs(args...) {}
-
-        template <typename... Args>
-        Msg<Args...>::Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, const ArgHolder<Args...>& args)
+        Msg<Args...>::Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc)
         {
             defines::StringBuf msgBuf;
             msgBuf.sputn(msg.data(), msg.size());
@@ -337,19 +302,17 @@ namespace eLog
             mLabel = std::make_unique<defines::StringBuf>(std::move(labelBuf));
             mLoc = std::make_unique<defines::SourceLoc>(loc);
             mMsg = std::make_unique<defines::StringBuf>(std::move(msgBuf));
-            mArgs = std::make_unique<ArgHolder<Args...>>(args);
         }
 
         template <typename... Args>
         void FillFormat(Msg<Args...>& msg)
         {
-            if(!msg.mMsg || !msg.mArgs)
+            if(!msg.mMsg)
                 return;
 
             auto view = msg.mMsg->view();
 
             std::string fmtMsg(view);
-            defines::apply_from_tuple(fmtMsg, msg.mArgs->mArgs);
 
             msg.mMsg.get()->str(fmtMsg);
         }
@@ -407,8 +370,8 @@ namespace eLog
             if(!msg.mLevel || !msg.mLabel || !msg.mLoc || !msg.mMsg)
                 return;
 
-            if(msg.mArgs)
-                FillFormat(msg);
+            
+            FillFormat(msg);
 
             auto level = src::LogLevel::mLevels.at(*msg.mLevel.get());
             auto label = msg.mLabel->view();
@@ -439,19 +402,19 @@ namespace eLog
     }
 
     void log(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc)
-        {
-            defines::StringBuf out;
-            out::Msg msgObj(level, msg, label, loc, out::ArgHolder<>{});
-            out::BuildMsg(out, msgObj);
-            out::Log(std::cout, out);
-        }
+    {
+        defines::StringBuf out;
+        out::Msg msgObj(level, msg, label, loc);
+        out::BuildMsg(out, msgObj);
+        out::Log(std::cout, out);
+    }
 
-        template <typename... Args>
-        void logV(defines::LogLevel level, defines::View msg, out::ArgHolder<Args...> args ,defines::Label label, defines::SourceLoc loc)
-        {
-            defines::StringBuf out;
-            out::Msg msgObj(level, msg, label, loc, args);
-            out::BuildMsg(out, msgObj);
-            out::Log(std::cout, out);
-        }
+    template <typename... Args>
+    void logV(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc)
+    {
+        defines::StringBuf out;
+        out::Msg msgObj(level, msg, label, loc);
+        out::BuildMsg(out, msgObj);
+        out::Log(std::cout, out);
+    }
 } // namespace eLog
