@@ -152,7 +152,7 @@ namespace eLog
         struct Msg
         {
         public:
-            explicit Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, Args&& ... args);
+            explicit Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, const ArgHolder<Args...>& args);
             defines::Scope<defines::LogLevel> mLevel;
             defines::Scope<defines::StringBuf> mLabel;
             defines::Scope<defines::SourceLoc> mLoc;
@@ -168,6 +168,10 @@ namespace eLog
 
         void Log(defines::OStream& stream, const defines::StringBuf& out);
     } // namespace out
+
+    void log(defines::LogLevel level, defines::View msg, defines::Label label = "", defines::SourceLoc loc = SourceLoc::current());
+    template <typename... Args>
+    void logV(defines::LogLevel level, defines::View msg, out::ArgHolder<Args...> args ,defines::Label label = "", defines::SourceLoc loc = SourceLoc::current());
 } // namespace eLog
 
 // implementation
@@ -178,13 +182,13 @@ namespace eLog
         template <typename T, typename... Args>
         constexpr Ref<T> makeRef(Args&& ... args)
         {
-            return std::make_shared<T>(std::forward((args)...));
+            return std::make_shared<T>(std::forward(args...));
         }
 
         template <typename T, typename... Args>
         constexpr Scope<T> makeScope(Args&& ... args)
         {
-            return std::make_unique<T>(std::forward((args)...));
+            return std::make_unique<T>(std::forward(args...));
         }
         
         template<typename... Args, std::size_t... Is>
@@ -272,7 +276,7 @@ namespace eLog
         ArgHolder<Args...>::ArgHolder(Args &&... args) : mArgs(std::forward<Args>(args)...) {}
 
         template <typename... Args>
-        Msg<Args...>::Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, Args &&... args)
+        Msg<Args...>::Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, const ArgHolder<Args...>& args)
         {
             defines::StringBuf msgBuf;
             msgBuf.sputn(msg.data(), msg.size());
@@ -284,7 +288,7 @@ namespace eLog
             mLabel = std::make_unique<defines::StringBuf>(std::move(labelBuf));
             mLoc = std::make_unique<defines::SourceLoc>(loc);
             mMsg = std::make_unique<defines::StringBuf>(std::move(msgBuf));
-            mArgs = std::make_unique<ArgHolder<Args...>>(std::forward<Args>(args)...);
+            mArgs = std::make_unique<ArgHolder<Args...>>(args);
         }
 
         template <typename... Args>
@@ -334,6 +338,7 @@ namespace eLog
             out.sputc(']');
             out.sputn(" : ", 3);
             out.sputn(msgStr.data(), msgStr.size());
+            out.sputc('\n');
         }
 
         void Log(defines::OStream& stream, const defines::StringBuf& out)
@@ -342,4 +347,22 @@ namespace eLog
             stream << msg;
         }
     }
+
+    void log(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc)
+        {
+            defines::StringBuf out;
+            out::Msg msgObj(level, msg, label, loc, out::ArgHolder<>{});
+            out::BuildMsg(out, msgObj);
+            out::Log(std::cout, out);
+        
+        }
+
+        template <typename... Args>
+        void logV(defines::LogLevel level, defines::View msg, out::ArgHolder<Args...> args ,defines::Label label, defines::SourceLoc loc)
+        {
+            defines::StringBuf out;
+            out::Msg msgObj(level, msg, label, loc, args);
+            out::BuildMsg(out, msgObj);
+            out::Log(std::cout, out);
+        }
 } // namespace eLog
