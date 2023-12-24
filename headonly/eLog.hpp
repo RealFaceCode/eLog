@@ -11,6 +11,7 @@
 #include <format>
 #include <sstream>
 #include <cstring>
+#include <filesystem>
 
 #ifdef __clang__
 #include <experimental/source_location>
@@ -111,6 +112,7 @@ namespace eLog
         using Umap = std::unordered_map<T0, T1>;
         template <typename T0, typename T1>
         using Pair = std::pair<T0, T1>;
+        using Path = std::filesystem::path;
         
         using Label = View;
         using LogLevel = unsigned int;
@@ -159,55 +161,12 @@ namespace eLog
         };
 
         template <typename... Args>
-        void FillFormat(Msg<Args...>& msg)
-        {
-            if(!msg.mMsg || !msg.mArgs)
-                return;
-
-            auto view = msg.mMsg->view();
-
-            std::string fmtMsg(view);
-            defines::apply_from_tuple(fmtMsg, msg.mArgs->mArgs);
-
-            msg.mMsg.get()->str(fmtMsg);
-        }
+        void FillFormat(Msg<Args...>& msg);
 
         template <typename... Args>
-        void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg)
-        {
-            if(!msg.mLevel || !msg.mLabel || !msg.mLoc || !msg.mMsg)
-                return;
+        void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg);
 
-            if(msg.mArgs)
-                FillFormat(msg);
-
-            auto level = src::LogLevel::mLevels.at(*msg.mLevel.get());
-            auto label = msg.mLabel->view();
-            auto loc = *msg.mLoc;
-            auto msgStr = msg.mMsg->view();
-
-            out.sputn(level.second.data(), level.second.size());
-            out.sputn(level.first.data(), level.first.size());
-            out.sputn(src::AsciiColor::mReset.data(), src::AsciiColor::mReset.size());
-            out.sputn("\t : ", 5);
-            out.sputc('[');
-            out.sputn(label.data(), label.size());
-            out.sputc(']');
-            out.sputn(" : ", 4);
-            out.sputc('[');
-            out.sputn(loc.file_name(), strlen(loc.file_name()));
-            out.sputc(':');
-            out.sputn(std::to_string(loc.line()).data(), std::to_string(loc.line()).size());
-            out.sputc(']');
-            out.sputn("\t : ", 5);
-            out.sputn(msgStr.data(), msgStr.size());
-        }
-
-        void Log(defines::OStream& stream, defines::StringBuf& out)
-        {
-            auto msg = out.view();
-            stream << msg;
-        }
+        void Log(defines::OStream& stream, const defines::StringBuf& out);
     } // namespace out
 } // namespace eLog
 
@@ -326,6 +285,61 @@ namespace eLog
             mLoc = std::make_unique<defines::SourceLoc>(loc);
             mMsg = std::make_unique<defines::StringBuf>(std::move(msgBuf));
             mArgs = std::make_unique<ArgHolder<Args...>>(std::forward<Args>(args)...);
+        }
+
+        template <typename... Args>
+        void FillFormat(Msg<Args...>& msg)
+        {
+            if(!msg.mMsg || !msg.mArgs)
+                return;
+
+            auto view = msg.mMsg->view();
+
+            std::string fmtMsg(view);
+            defines::apply_from_tuple(fmtMsg, msg.mArgs->mArgs);
+
+            msg.mMsg.get()->str(fmtMsg);
+        }
+
+        template <typename... Args>
+        void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg)
+        {
+            if(!msg.mLevel || !msg.mLabel || !msg.mLoc || !msg.mMsg)
+                return;
+
+            if(msg.mArgs)
+                FillFormat(msg);
+
+            auto level = src::LogLevel::mLevels.at(*msg.mLevel.get());
+            auto label = msg.mLabel->view();
+            auto loc = *msg.mLoc;
+            auto msgStr = msg.mMsg->view();
+            defines::Path path(loc.file_name());
+            auto filename = path.filename().string();
+
+            out.sputn(level.second.data(), level.second.size());
+            out.sputn(level.first.data(), level.first.size());
+            out.sputn(src::AsciiColor::mReset.data(), src::AsciiColor::mReset.size());
+            out.sputn("\t : ", 4);
+            out.sputc('[');
+            out.sputn(label.data(), label.size());
+            out.sputc(']');
+            out.sputn(" : ", 3);
+            out.sputc('[');
+            out.sputn(filename.data(), filename.size());
+            out.sputn(" | ", 3);
+            out.sputn(std::to_string(loc.line()).data(), std::to_string(loc.line()).size());
+            out.sputn(" | ", 3);
+            out.sputn(loc.function_name(), std::strlen(loc.function_name()));
+            out.sputc(']');
+            out.sputn(" : ", 3);
+            out.sputn(msgStr.data(), msgStr.size());
+        }
+
+        void Log(defines::OStream& stream, const defines::StringBuf& out)
+        {
+            auto msg = out.view();
+            stream << msg;
         }
     }
 } // namespace eLog
