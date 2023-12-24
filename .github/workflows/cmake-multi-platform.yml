@@ -9,25 +9,38 @@ on:
       - main
 
 jobs:
- build:
-  runs-on: ${{ matrix.os }}
-  strategy:
-    matrix:
-      os: [ubuntu-latest, windows-latest, macos-latest]
-      compiler: ['gcc', 'clang', 'msvc']
-      
-  steps:
-  - uses: actions/checkout@v2
-  - name: Configure with CMake
-  - name: Setup C++ environment
-    uses: actions/setup-cpp@v2
-    with:
-      cpp-version: latest
-      
-    run: cmake -B build -S test
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        compiler: ['gcc', 'clang', 'msvc']
 
-  - name: Build with CMake
-    run: cmake --build build
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Compiler
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential
+            if [ "${{ matrix.compiler }}" = "gcc" ]; then
+              sudo apt-get install -y gcc
+            elif [ "${{ matrix.compiler }}" = "clang" ]; then
+              sudo apt-get install -y clang
+            fi
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            # Set up MSVC on Windows
+            # You may need additional steps to install/update MSVC here
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            # Set up compilers for macOS
+            # You may need additional steps to install/update compilers for macOS here
+          fi
 
-  - name: Run tests
-    run: ctest --test-dir build
+      - name: Configure with CMake
+        run: cmake -B build -S test
+
+      - name: Build with CMake
+        run: cmake --build build
+
+      - name: Run tests
+        run: ctest --test-dir build
