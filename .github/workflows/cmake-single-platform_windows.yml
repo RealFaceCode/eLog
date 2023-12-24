@@ -1,1 +1,55 @@
+name: C++ CI on Windows
 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        compiler: ['msvc', 'gcc', 'clang']
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up MSVC
+        if: matrix.compiler == 'msvc'
+        run: |
+          # Hier könnten weitere Schritte zur MSVC-Konfiguration stehen
+          echo "Setting up MSVC"
+
+      - name: Set up GCC
+        if: matrix.compiler == 'gcc'
+        run: |
+          choco install mingw -y
+          echo "Setting up GCC"
+
+      - name: Set up Clang
+        if: matrix.compiler == 'clang'
+        run: |
+          choco install llvm -y
+          echo "Setting up Clang"
+
+      - name: Configure with CMake
+        run: cmake -B build -S test
+        env:
+          CC: |
+            if [ "${{ matrix.compiler }}" = "gcc" ]; then
+              echo "gcc"
+            elif [ "${{ matrix.compiler }}" = "clang" ]; then
+              echo "clang"
+            else
+              echo "cl" # For MSVC
+            fi
+
+      - name: Build with CMake
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: ctest --test-dir build
