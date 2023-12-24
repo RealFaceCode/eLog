@@ -178,13 +178,13 @@ namespace eLog
         template <typename T, typename... Args>
         constexpr Ref<T> makeRef(Args&& ... args)
         {
-            return std::make_shared<T>(std::forward((args)...));
+            return std::make_shared<T>(std::forward(args...));
         }
 
         template <typename T, typename... Args>
         constexpr Scope<T> makeScope(Args&& ... args)
         {
-            return std::make_unique<T>(std::forward((args)...));
+            return std::make_unique<T>(std::forward(args...));
         }
         
         template<typename... Args, std::size_t... Is>
@@ -269,7 +269,7 @@ namespace eLog
     namespace out
     {
         template <typename... Args>
-        ArgHolder<Args...>::ArgHolder(Args &&... args) : mArgs(std::forward<Args>(args)...) {}
+        ArgHolder<Args...>::ArgHolder(Args &&... args) : mArgs(args...) {}
 
         template <typename... Args>
         Msg<Args...>::Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, Args &&... args)
