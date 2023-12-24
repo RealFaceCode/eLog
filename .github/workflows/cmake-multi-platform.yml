@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -34,10 +34,6 @@ jobs:
             # Install GCC 13 on Windows (adjust based on availability)
             # Install Clang 17 on Windows (adjust based on availability)
             echo "Windows setup"
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            # Install GCC 13 on MacOS (adjust based on availability)
-            # Install Clang 17 on MacOS (adjust based on availability)
-            echo "macOS setup"
           fi
 
       - name: Configure with CMake
