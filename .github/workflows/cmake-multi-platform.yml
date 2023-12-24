@@ -17,7 +17,10 @@ jobs:
       compiler: ['gcc', 'clang', 'msvc']
   steps:
   - uses: actions/checkout@v2
-
+  - name: Setup C++ environment
+    uses: actions/setup-cpp@v2
+    with:
+      cpp-version: latest
   - name: Configure with CMake
     run: cmake -B build -S test
 
