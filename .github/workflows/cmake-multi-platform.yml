@@ -31,9 +31,11 @@ jobs:
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
             # Set up MSVC on Windows
             # You may need additional steps to install/update MSVC here
+            echo "Windows setup"
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
             # Set up compilers for macOS
             # You may need additional steps to install/update compilers for macOS here
+            echo "macOS setup"
           fi
 
       - name: Configure with CMake
