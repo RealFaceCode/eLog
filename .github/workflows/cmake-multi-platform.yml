@@ -14,7 +14,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        compiler: ['gcc', 'clang', 'msvc']
 
     steps:
       - uses: actions/checkout@v2
@@ -23,20 +22,21 @@ jobs:
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get update
             sudo apt-get install -y build-essential
-            if [ "${{ matrix.compiler }}" = "gcc" ]; then
-              sudo apt-get install -y gcc
-              sudo apt install gcc-12
-            elif [ "${{ matrix.compiler }}" = "clang" ]; then
-              sudo apt-get install -y clang
-              sudo apt install clang-17
-            fi
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get install -y gcc-13 g++-13
+            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+            sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-17 main"
+            sudo apt-get update
+            sudo apt-get install -y clang-17
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Set up MSVC on Windows
-            # You may need additional steps to install/update MSVC here
+            # Install GCC 13 on Windows (adjust based on availability)
+            # Install Clang 17 on Windows (adjust based on availability)
             echo "Windows setup"
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            # Set up compilers for macOS
-            # You may need additional steps to install/update compilers for macOS here
+            # Install GCC 13 on MacOS (adjust based on availability)
+            # Install Clang 17 on MacOS (adjust based on availability)
             echo "macOS setup"
           fi
 
