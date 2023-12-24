@@ -6,6 +6,11 @@
 #include <string_view>
 #include <iostream>
 #include <unordered_map>
+#include <utility>
+#include <tuple>
+#include <format>
+#include <sstream>
+#include <cstring>
 
 #ifdef __clang__
 #include <experimental/source_location>
@@ -84,6 +89,13 @@ namespace eLog
         template <typename T, typename... Args>
         constexpr Scope<T> makeScope(Args &&... args);
 
+
+        template<typename... Args, std::size_t... Is>
+        void apply_from_tuple(std::string& str, const std::tuple<Args...>& t, std::index_sequence<Is...>);
+
+        template<typename... Args>
+        void apply_from_tuple(std::string& str, const std::tuple<Args...>& t);
+
 #ifdef __clang__
         using SourceLoc = std::experimental::source_location;
 #else
@@ -111,24 +123,91 @@ namespace eLog
     {
         struct AsciiColor
         {
+        public:
             static const defines::Umap<AsciiColorEnum, defines::AsciiColorS> mColors;
             static const defines::AsciiColorS mReset;
         };
 
         struct LogLevel
         {
+        public:
             static defines::Umap<defines::LogLevel, defines::Pair<defines::String, defines::AsciiColorS>> mLevels;
         };
     } // namespace src
 
     namespace out
     {
+        template <typename... Args>
+        struct ArgHolder
+        {
+        public:
+            explicit ArgHolder(Args&&... args);
+
+            std::tuple<Args...> mArgs;
+        };
+        
+        template <typename... Args>
         struct Msg
         {
-            defines::Scope<defines::OStream> mStream;
-            defines::Scope<defines::StringBuf> mMsg;
+        public:
+            explicit Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, Args&& ... args);
+            defines::Scope<defines::LogLevel> mLevel;
+            defines::Scope<defines::StringBuf> mLabel;
             defines::Scope<defines::SourceLoc> mLoc;
+            defines::Scope<defines::StringBuf> mMsg;
+            defines::Scope<ArgHolder<Args...>> mArgs;
         };
+
+        template <typename... Args>
+        void FillFormat(Msg<Args...>& msg)
+        {
+            if(!msg.mMsg || !msg.mArgs)
+                return;
+
+            auto view = msg.mMsg->view();
+
+            std::string fmtMsg(view);
+            defines::apply_from_tuple(fmtMsg, msg.mArgs->mArgs);
+
+            msg.mMsg.get()->str(fmtMsg);
+        }
+
+        template <typename... Args>
+        void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg)
+        {
+            if(!msg.mLevel || !msg.mLabel || !msg.mLoc || !msg.mMsg)
+                return;
+
+            if(msg.mArgs)
+                FillFormat(msg);
+
+            auto level = src::LogLevel::mLevels.at(*msg.mLevel.get());
+            auto label = msg.mLabel->view();
+            auto loc = *msg.mLoc;
+            auto msgStr = msg.mMsg->view();
+
+            out.sputn(level.second.data(), level.second.size());
+            out.sputn(level.first.data(), level.first.size());
+            out.sputn(src::AsciiColor::mReset.data(), src::AsciiColor::mReset.size());
+            out.sputn("\t : ", 5);
+            out.sputc('[');
+            out.sputn(label.data(), label.size());
+            out.sputc(']');
+            out.sputn(" : ", 4);
+            out.sputc('[');
+            out.sputn(loc.file_name(), strlen(loc.file_name()));
+            out.sputc(':');
+            out.sputn(std::to_string(loc.line()).data(), std::to_string(loc.line()).size());
+            out.sputc(']');
+            out.sputn("\t : ", 5);
+            out.sputn(msgStr.data(), msgStr.size());
+        }
+
+        void Log(defines::OStream& stream, defines::StringBuf& out)
+        {
+            auto msg = out.view();
+            stream << msg;
+        }
     } // namespace out
 } // namespace eLog
 
@@ -138,15 +217,27 @@ namespace eLog
     namespace defines
     {
         template <typename T, typename... Args>
-        constexpr Ref<T> makeRef(Args &&... args)
+        constexpr Ref<T> makeRef(Args&& ... args)
         {
-            return std::make_shared<T>(std::forward<Args>(args)...);
+            return std::make_shared<T>(std::forward((args)...));
         }
 
         template <typename T, typename... Args>
-        constexpr Scope<T> makeScope(Args &&... args)
+        constexpr Scope<T> makeScope(Args&& ... args)
         {
-            return std::make_unique<T>(std::forward<Args>(args)...);
+            return std::make_unique<T>(std::forward((args)...));
+        }
+        
+        template<typename... Args, std::size_t... Is>
+        void apply_from_tuple(std::string& str, const std::tuple<Args...>& t, std::index_sequence<Is...>)
+        {
+            str = std::vformat(str, std::make_format_args(std::get<Is>(t)...));
+        }
+
+        template<typename... Args>
+        void apply_from_tuple(std::string& str, const std::tuple<Args...>& t)
+        {
+            apply_from_tuple(str, t, std::index_sequence_for<Args...>{});
         }
     } // namespace defines
 
@@ -215,4 +306,26 @@ namespace eLog
             {5, {"FATAL", AsciiColor::mColors.at(AsciiColorEnum::BOLD_MAGENTA)}},
         };
     } // namespace src
+
+    namespace out
+    {
+        template <typename... Args>
+        ArgHolder<Args...>::ArgHolder(Args &&... args) : mArgs(std::forward<Args>(args)...) {}
+
+        template <typename... Args>
+        Msg<Args...>::Msg(defines::LogLevel level, defines::View msg, defines::Label label, defines::SourceLoc loc, Args &&... args)
+        {
+            defines::StringBuf msgBuf;
+            msgBuf.sputn(msg.data(), msg.size());
+
+            defines::StringBuf labelBuf;
+            labelBuf.sputn(label.data(), label.size());
+
+            mLevel = std::make_unique<defines::LogLevel>(level);
+            mLabel = std::make_unique<defines::StringBuf>(std::move(labelBuf));
+            mLoc = std::make_unique<defines::SourceLoc>(loc);
+            mMsg = std::make_unique<defines::StringBuf>(std::move(msgBuf));
+            mArgs = std::make_unique<ArgHolder<Args...>>(std::forward<Args>(args)...);
+        }
+    }
 } // namespace eLog
