@@ -169,6 +169,8 @@ namespace eLog
 
         void FillLogInfoFmt(defines::StringBuf& out, defines::View filename, defines::View funcname, defines::View line);
 
+        void FillTDInfoFmt(defines::StringBuf& out, defines::View fmt);
+
         template <typename... Args>
         void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg);
 
@@ -337,6 +339,27 @@ namespace eLog
             out.sputc(']');
         }
 
+        void FillTDInfoFmt(defines::StringBuf& out, defines::View fmt)
+        {
+            auto currentTime = std::chrono::system_clock::now();
+            auto localTime = std::chrono::system_clock::to_time_t(currentTime);
+            std::ostringstream oss;
+            
+            std::tm result;
+            #ifdef _WIN32
+                ::localtime_s(&result, &localTime);
+            #else
+                ::localtime_r(&localTime, &result);
+            #endif
+            
+            oss << std::put_time(&result, fmt.data());
+            auto time = oss.view();
+
+            out.sputc('[');
+            out.sputn(time.data(), time.size());
+            out.sputc(']');
+        }
+
         template <typename... Args>
         void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg)
         {
@@ -354,8 +377,13 @@ namespace eLog
             auto filename = path.filename().string();
 
             FillLogFmt(out, level);
-            FillLabelFmt(out, label);
+            FillTDInfoFmt(out, "%H:%M:%S %d-%m-%Y");
             out.sputn(" : ", 3);
+            if(!label.empty())
+            {
+                FillLabelFmt(out, label);
+                out.sputn(" : ", 3);
+            }
             FillLogInfoFmt(out, filename, loc.function_name(), std::to_string(loc.line()));
             out.sputn(" : ", 3);
             out.sputn(msgStr.data(), msgStr.size());
