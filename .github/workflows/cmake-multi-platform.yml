@@ -30,6 +30,14 @@ jobs:
             sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-17 main"
             sudo apt-get update
             sudo apt-get install -y clang-17
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            # Install GCC 13 on Windows (adjust based on availability)
+            # Install Clang 17 on Windows (adjust based on availability)
+            echo "Windows setup"
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            # Install GCC 13 on MacOS (adjust based on availability)
+            # Install Clang 17 on MacOS (adjust based on availability)
+            echo "macOS setup"
           fi
 
       - name: Configure with CMake
