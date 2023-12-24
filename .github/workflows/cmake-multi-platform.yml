@@ -27,6 +27,7 @@ jobs:
               sudo apt-get install -y gcc
             elif [ "${{ matrix.compiler }}" = "clang" ]; then
               sudo apt-get install -y clang
+              sudo apt install clang-17
             fi
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
             # Set up MSVC on Windows
