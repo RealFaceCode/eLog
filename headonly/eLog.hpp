@@ -76,6 +76,18 @@ namespace eLog
         RESET
     };
 
+    enum class FmtFlags
+    {
+        NONE = 0,
+        LOG_LEVEL = 1 << 0,
+        LABEL = 1 << 1,
+        TIME_DATE = 1 << 2,
+        FILENAME = 1 << 3,
+        FUNCTION = 1 << 4,
+        LINE = 1 << 5,
+        ALL = LOG_LEVEL | LABEL | TIME_DATE | FILENAME | FUNCTION | LINE
+    };
+
     namespace defines
     {
         //usings
@@ -135,7 +147,24 @@ namespace eLog
         public:
             static defines::Umap<defines::LogLevel, defines::Pair<defines::String, defines::AsciiColorS>> mLevels;
         };
+
+        struct Fmt
+        {
+        public:
+            static FmtFlags mFlags;
+            static defines::String mLogFmt;
+            static defines::String mLabelFmt;
+            static defines::String mTDInfoFmt;
+        };
     } // namespace src
+
+    namespace Fmt
+    {
+        void setFlags(FmtFlags flags);
+        void setLogFmt(defines::View fmt);
+        void setLabelFmt(defines::View fmt);
+        void setTDInfoFmt(defines::View fmt);
+    } // namespace Fmt
 
     namespace out
     {
@@ -276,7 +305,35 @@ namespace eLog
             {4, {"ERROR", AsciiColor::mColors.at(AsciiColorEnum::BOLD_RED)}},
             {5, {"FATAL", AsciiColor::mColors.at(AsciiColorEnum::BOLD_MAGENTA)}},
         };
+
+        FmtFlags Fmt::mFlags = FmtFlags::ALL;
+        defines::String Fmt::mLogFmt = "%H:%M:%S %d-%m-%Y";
+        defines::String Fmt::mLabelFmt = "[%s]";
+        defines::String Fmt::mTDInfoFmt = "[%s | %s | %s]";
     } // namespace src
+
+    namespace Fmt
+    {
+        void setFlags(FmtFlags flags)
+        {
+            src::Fmt::mFlags = flags;
+        }
+
+        void setLogFmt(defines::View fmt)
+        {
+            src::Fmt::mLogFmt = fmt;
+        }
+
+        void setLabelFmt(defines::View fmt)
+        {
+            src::Fmt::mLabelFmt = fmt;
+        }
+
+        void setTDInfoFmt(defines::View fmt)
+        {
+            src::Fmt::mTDInfoFmt = fmt;
+        }
+    } // namespace Fmt
 
     namespace out
     {
@@ -403,7 +460,6 @@ namespace eLog
             out::Msg msgObj(level, msg, label, loc, out::ArgHolder<>{});
             out::BuildMsg(out, msgObj);
             out::Log(std::cout, out);
-        
         }
 
         template <typename... Args>
