@@ -152,18 +152,14 @@ namespace eLog
         {
         public:
             static FmtFlags mFlags;
-            static defines::String mLogFmt;
-            static defines::String mLabelFmt;
-            static defines::String mTDInfoFmt;
+            static defines::String mLogTDFmt;
         };
     } // namespace src
 
     namespace Fmt
     {
         void setFlags(FmtFlags flags);
-        void setLogFmt(defines::View fmt);
-        void setLabelFmt(defines::View fmt);
-        void setTDInfoFmt(defines::View fmt);
+        void setLogTDFmt(defines::View fmt);
     } // namespace Fmt
 
     namespace out
@@ -307,9 +303,7 @@ namespace eLog
         };
 
         FmtFlags Fmt::mFlags = FmtFlags::ALL;
-        defines::String Fmt::mLogFmt = "%H:%M:%S %d-%m-%Y";
-        defines::String Fmt::mLabelFmt = "[%s]";
-        defines::String Fmt::mTDInfoFmt = "[%s | %s | %s]";
+        defines::String Fmt::mLogTDFmt = "%H:%M:%S %d-%m-%Y";
     } // namespace src
 
     namespace Fmt
@@ -319,19 +313,9 @@ namespace eLog
             src::Fmt::mFlags = flags;
         }
 
-        void setLogFmt(defines::View fmt)
+        void setLogTDFmt(defines::View fmt)
         {
-            src::Fmt::mLogFmt = fmt;
-        }
-
-        void setLabelFmt(defines::View fmt)
-        {
-            src::Fmt::mLabelFmt = fmt;
-        }
-
-        void setTDInfoFmt(defines::View fmt)
-        {
-            src::Fmt::mTDInfoFmt = fmt;
+            src::Fmt::mLogTDFmt = fmt;
         }
     } // namespace Fmt
 
@@ -434,7 +418,7 @@ namespace eLog
             auto filename = path.filename().string();
 
             FillLogFmt(out, level);
-            FillTDInfoFmt(out, "%H:%M:%S %d-%m-%Y");
+            FillTDInfoFmt(out, src::Fmt::mLogTDFmt);
             out.sputn(" : ", 3);
             if(!label.empty())
             {
