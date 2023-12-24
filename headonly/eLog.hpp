@@ -163,6 +163,12 @@ namespace eLog
         template <typename... Args>
         void FillFormat(Msg<Args...>& msg);
 
+        void FillLogFmt(defines::StringBuf& out, const defines::Pair<defines::String, defines::AsciiColorS>& level);
+
+        void FillLabelFmt(defines::StringBuf& out, defines::Label label);
+
+        void FillLogInfoFmt(defines::StringBuf& out, defines::View filename, defines::View funcname, defines::View line);
+
         template <typename... Args>
         void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg);
 
@@ -301,6 +307,32 @@ namespace eLog
             msg.mMsg.get()->str(fmtMsg);
         }
 
+        void FillLogFmt(defines::StringBuf& out, const defines::Pair<defines::String, defines::AsciiColorS>& level)
+        {
+            out.sputn(level.second.data(), level.second.size());
+            out.sputn(level.first.data(), level.first.size());
+            out.sputn(src::AsciiColor::mReset.data(), src::AsciiColor::mReset.size());
+            out.sputn("\t : ", 4);
+        }
+
+        void FillLabelFmt(defines::StringBuf& out, defines::Label label)
+        {
+            out.sputc('[');
+            out.sputn(label.data(), label.size());
+            out.sputc(']');
+        }
+
+        void FillLogInfoFmt(defines::StringBuf& out, defines::View filename, defines::View funcname, defines::View line)
+        {
+            out.sputc('[');
+            out.sputn(filename.data(), filename.size());
+            out.sputn(" | ", 3);
+            out.sputn(line.data(), line.length());
+            out.sputn(" | ", 3);
+            out.sputn(funcname.data(), funcname.size());
+            out.sputc(']');
+        }
+
         template <typename... Args>
         void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg)
         {
@@ -317,21 +349,10 @@ namespace eLog
             defines::Path path(loc.file_name());
             auto filename = path.filename().string();
 
-            out.sputn(level.second.data(), level.second.size());
-            out.sputn(level.first.data(), level.first.size());
-            out.sputn(src::AsciiColor::mReset.data(), src::AsciiColor::mReset.size());
-            out.sputn("\t : ", 4);
-            out.sputc('[');
-            out.sputn(label.data(), label.size());
-            out.sputc(']');
+            FillLogFmt(out, level);
+            FillLabelFmt(out, label);
             out.sputn(" : ", 3);
-            out.sputc('[');
-            out.sputn(filename.data(), filename.size());
-            out.sputn(" | ", 3);
-            out.sputn(std::to_string(loc.line()).data(), std::to_string(loc.line()).size());
-            out.sputn(" | ", 3);
-            out.sputn(loc.function_name(), std::strlen(loc.function_name()));
-            out.sputc(']');
+            FillLogInfoFmt(out, filename, loc.function_name(), std::to_string(loc.line()));
             out.sputn(" : ", 3);
             out.sputn(msgStr.data(), msgStr.size());
         }
