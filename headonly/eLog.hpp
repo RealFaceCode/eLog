@@ -163,7 +163,7 @@ namespace eLog
             defines::String str;
             defines::SourceLoc loc;
 
-            FmtString(defines::View str, const defines::SourceLoc& loc = defines::SourceLoc::current());
+            FmtString(const char* str, const defines::SourceLoc& loc = defines::SourceLoc::current());
         };
 
         const defines::SourceLoc&  vFormat(defines::String& str, const FmtString& format, std::format_args args);
@@ -298,7 +298,7 @@ namespace eLog
 
     namespace fmt
     {
-        FmtString::FmtString(defines::View str, const defines::SourceLoc& loc) 
+        FmtString::FmtString(const char* str, const defines::SourceLoc& loc) 
         : str(str), loc(loc) {}
 
         const defines::SourceLoc&  vFormat(defines::String& str, const FmtString& format, std::format_args args)
