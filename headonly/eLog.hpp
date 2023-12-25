@@ -226,15 +226,6 @@ namespace eLog
         {
             return std::make_unique<T>(std::forward(args...));
         }
-
-        //TODO move defines to define section
-        template<typename Func, typename... Args>
-        auto apply_to_tuple(Func func, defines::String& str, const fmt::FmtString& msg, std::tuple<Args...> args) {
-            return std::apply([&](auto&&... args) {
-                return func(str, msg, args...);
-            }, args);
-        }
-    
     } // namespace defines
 
     namespace src
