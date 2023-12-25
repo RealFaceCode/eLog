@@ -202,7 +202,7 @@ namespace eLog
         template <typename... Args>
         void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg);
 
-        void Log(defines::OStream& stream, const defines::StringBuf& out);
+        void Log(FILE* file, const defines::StringBuf& out);
     } // namespace out
 
     template <typename... Args>
@@ -429,10 +429,12 @@ namespace eLog
             out.sputc('\n');
         }
 
-        void Log(defines::OStream& stream, const defines::StringBuf& out)
+        void Log(FILE* file, const defines::StringBuf& out)
         {
+            if(file == nullptr)
+                return;
             auto msg = out.view();
-            stream << msg;
+            ::fprintf(file, "%s", msg.data());
         }
     }
 
@@ -442,6 +444,6 @@ namespace eLog
         defines::StringBuf out;
         out::Msg msgObj(level, msg, label, args...);
         out::BuildMsg(out, msgObj);
-        out::Log(std::cout, out);
+        out::Log(stdout, out);
     }
 } // namespace eLog
