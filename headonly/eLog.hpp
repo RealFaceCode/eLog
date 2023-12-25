@@ -184,7 +184,6 @@ namespace eLog
             explicit Msg(defines::LogLevel level, const fmt::FmtString& msg, defines::Label label, Args ... args);
             defines::Scope<defines::LogLevel> mLevel;
             defines::Scope<defines::StringBuf> mLabel;
-            defines::Scope<defines::SourceLoc> mLoc;
             defines::Scope<fmt::FmtString> mMsg;
             defines::Scope<defines::Tuple<Args...>> mArgs;
         };
@@ -330,7 +329,6 @@ namespace eLog
         template <typename... Args>
         Msg<Args...>::Msg(defines::LogLevel level, const fmt::FmtString& msg, defines::Label label, Args ... args)
         :   mLevel(std::make_unique<defines::LogLevel>(level)),
-            mLoc(std::make_unique<defines::SourceLoc>(msg.loc)),
             mMsg(std::make_unique<fmt::FmtString>(msg)),
             mArgs(std::make_unique<defines::Tuple<Args...>>(std::make_tuple(args...)))
         {
@@ -405,15 +403,14 @@ namespace eLog
         template <typename... Args>
         void BuildMsg(defines::StringBuf& out, Msg<Args...>& msg)
         {
-            if(!msg.mLevel || !msg.mLabel || !msg.mLoc || !msg.mMsg)
+            if(!msg.mLevel || !msg.mLabel || !msg.mMsg)
                 return;
 
-            
             FillFormat(msg);
 
             auto level = src::LogLevel::mLevels.at(*msg.mLevel.get());
             auto label = msg.mLabel->view();
-            auto loc = *msg.mLoc;
+            auto loc = msg.mMsg->loc;
             auto msgStr = msg.mMsg->str;
             defines::Path path(loc.file_name());
             auto filename = path.filename().string();
