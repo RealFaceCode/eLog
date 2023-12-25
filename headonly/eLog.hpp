@@ -329,16 +329,14 @@ namespace eLog
     {
         template <typename... Args>
         Msg<Args...>::Msg(defines::LogLevel level, const fmt::FmtString& msg, defines::Label label, Args ... args)
+        :   mLevel(std::make_unique<defines::LogLevel>(level)),
+            mLoc(std::make_unique<defines::SourceLoc>(msg.loc)),
+            mMsg(std::make_unique<fmt::FmtString>(msg)),
+            mArgs(std::make_unique<defines::Tuple<Args...>>(std::make_tuple(args...)))
         {
-
             defines::StringBuf labelBuf;
             labelBuf.sputn(label.data(), label.size());
-
-            mLevel = std::make_unique<defines::LogLevel>(level);
             mLabel = std::make_unique<defines::StringBuf>(std::move(labelBuf));
-            mLoc = std::make_unique<defines::SourceLoc>(msg.loc);
-            mMsg = std::make_unique<fmt::FmtString>(msg);
-            mArgs = std::make_unique<defines::Tuple<Args...>>(std::make_tuple(args...));
         }
 
         template <typename... Args>
