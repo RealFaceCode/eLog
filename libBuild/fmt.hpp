@@ -378,7 +378,7 @@ namespace eLog::fmt
         return str.find(".") != std::string::npos;
     }
 
-    auto GetIndexAndModifier(const std::string& str, size_t& count, bool& specifierUsed)
+    auto GetIndex(const std::string& str, size_t& count, bool& specifierUsed)
     {
         bool specifier = HasSpecifier(str);
         bool alignment = HasAlignment(str).first;
@@ -393,13 +393,17 @@ namespace eLog::fmt
         if(!specifier && !alignment && !precision)
             return count++;
 
-        if(specifier && !alignment && !precision)
+        bool containsSpecifiers = ContainsChars(str, "dxXobeEgGfnscymHMSjAa");
+        if(specifier && !alignment && !precision && containsSpecifiers)
             return count++;
 
         if(specifier && alignment && !precision)
             return count++;
 
         if(specifier && !alignment && precision)
+            return count++;
+
+        if(!ContainsChars(str, "0123456789"))
             return count++;
 
         specifierUsed = true;
@@ -647,7 +651,7 @@ namespace eLog::fmt
                 result.replace(posItem, sizeItem, argsStr[count++]);
             else
             {
-                auto indexPos = GetIndexAndModifier(item, count, specifierUsed);
+                auto indexPos = GetIndex(item, count, specifierUsed);
                 if(indexPos >= argsStr.size())
                     throw std::runtime_error("Index out of range");
 
