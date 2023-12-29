@@ -13,7 +13,7 @@ void textComplex()
     assert(format("|{e.2}|", 42.3f), "|4.23e+01|");
     assert(format("|{e.2^<10}|", 42.3), "| 4.23e+01 |");
     assert(format("|{n}|", 123456789), "|123'456'789|");
-    assert(format("|{1:d}, {0:.4}|", 42, 32), "|42, 0032|");
+    assert(format("|{1:d}, {0:.4}|", 1, 2), "|2, 0001|");
 }
 
 int main()
