@@ -422,7 +422,7 @@ namespace eLog::fmt
         arg = ss.str();
     }
 
-    void ProcessAlignment(std::string& arg, std::pair<std::string, size_t> alignment)
+    void ProcessAlignment(std::string& arg, const std::pair<std::string, size_t>& alignment)
     {
         std::stringstream ss;
         if(alignment.first == "<")
@@ -662,6 +662,10 @@ namespace eLog::fmt
 
                 if(hasNumberFormat)
                     ProccessNumberFormat(arg, item, numberFormat);
+                else if(hasStringFormat)
+                {}
+                else if(hasTimeFormat)
+                {}
                 else
                 {
                     bool floating = arg.find(".") != std::string::npos;
