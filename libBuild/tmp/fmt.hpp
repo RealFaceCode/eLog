@@ -488,7 +488,6 @@ namespace tmp::fmt
 
 namespace tmp::fmt
 {
-
     #pragma region Helper
 
     struct StringHasher
