@@ -1346,7 +1346,10 @@ namespace tmp::fmt
             default:
                 break;
             }
-            arg.value.sputn(ss.view().data(), ss.view().size());
+
+            auto view = ss.view();
+            arg.value = std::move(std::stringbuf());
+            arg.value.sputn(view.data(), view.size());
         }
     }
 
@@ -1377,7 +1380,10 @@ namespace tmp::fmt
             default:
                 break;
             }
-            arg.value.sputn(ss.view().data(), ss.view().size());
+
+            auto view = ss.view();
+            arg.value = std::move(std::stringbuf());
+            arg.value.sputn(view.data(), view.size());
         }
     }
 
@@ -1456,7 +1462,10 @@ namespace tmp::fmt
             default:
                 break;
             }
-            arg.value.sputn(ss.view().data(), ss.view().size());
+            
+            auto view = ss.view();
+            arg.value = std::move(std::stringbuf());
+            arg.value.sputn(view.data(), view.size());
         }
 
         precision(arg, format);
