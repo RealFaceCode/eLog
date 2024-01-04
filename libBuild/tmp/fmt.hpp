@@ -1363,10 +1363,10 @@ namespace tmp::fmt
             case None:
                 break;
             case Left:
-                ss << std::left << std::setw(format.alignment.second.second) << arg.value.view();
+                ss << std::left << std::setw(format.alignment.second.second) << std::setfill(' ') << arg.value.view();
                 break;
             case Right:
-                ss << std::right << std::setw(format.alignment.second.second) << arg.value.view();
+                ss << std::right << std::setw(format.alignment.second.second) << std::setfill(' ') << arg.value.view();
                 break;
             case Center:
             {
@@ -1397,6 +1397,7 @@ namespace tmp::fmt
             case None:
                 break;
             case FormatSpecifier::decimal:
+                ss << arg.value.view().data();
                 break;
             case FormatSpecifier::hexadecimal:
                 ss << std::hex << std::stoll(arg.value.view().data());
@@ -1417,6 +1418,7 @@ namespace tmp::fmt
                 ss << std::scientific << std::uppercase << std::stof(arg.value.view().data());
                 break;
             case FormatSpecifier::floating:
+                ss << arg.value.view().data();
                 break;
             case FormatSpecifier::general:
                 throw FormatException("Format specifier [general] is not supported");
@@ -1428,8 +1430,10 @@ namespace tmp::fmt
                 ss << std::use_facet<std::numpunct<char>>(ss.getloc()).thousands_sep() << arg.value.view();
                 break;
             case FormatSpecifier::string:
+                ss << arg.value.view();
                 break;
             case FormatSpecifier::character:
+                ss << arg.value.view();
                 break;
             case FormatSpecifier::year:
                 throw FormatException("Format specifier [year] is not supported");
