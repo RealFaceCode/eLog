@@ -408,7 +408,6 @@ namespace tmp::fmt
 
 namespace tmp::fmt
 {
-
     #pragma region ArgumentType
 
     enum class ArgumentType

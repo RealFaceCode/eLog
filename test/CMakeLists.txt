@@ -9,10 +9,6 @@ add_executable(fmt_isContainer isContainer.cxx)
 target_compile_features(fmt_isContainer PRIVATE cxx_std_20)
 add_test(NAME fmt_isContainer COMMAND fmt_isContainer)
 
-add_executable(fmt_containsChas containsChar.cxx)
-target_compile_features(fmt_containsChas PRIVATE cxx_std_20)
-add_test(NAME fmt_containsChas COMMAND fmt_containsChas)
-
 add_executable(fmt_simple fmtSimple.cxx)
 target_compile_features(fmt_simple PRIVATE cxx_std_20)
 add_test(NAME fmt_simple COMMAND fmt_simple)

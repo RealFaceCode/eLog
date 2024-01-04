@@ -1,15 +1,16 @@
-#include "../libBuild/fmt.hpp"
-using namespace eLog::fmt;
+#include "../libBuild/tmp/fmt.hpp"
+#include "assert.h"
+using namespace tmp::fmt;
 
 void testAlignment()
 {
-    assert(format("{<4}", 42), "42  ");
-    assert(format("{>4}", 42), "  42");
-    assert(format("{^<4}", 42), " 42 ");
+    ::assert(Format("{<4}", 42), "42  ");
+    ::assert(Format("{>4}", 42), "  42");
+    ::assert(Format("{^<4}", 42), " 42 ");
 
-    assert(format("{:<10}", 3.1415), "3.1415    ");
-    assert(format("{:>10}", 3.1415), "    3.1415");
-    assert(format("{:^<10}", 3.1415), "  3.1415  ");
+    ::assert(Format("{:<10}", 3.1415), "3.1415    ");
+    ::assert(Format("{:>10}", 3.1415), "    3.1415");
+    ::assert(Format("{:^<10}", 3.1415), "  3.1415  ");
 }
 
 int main()
