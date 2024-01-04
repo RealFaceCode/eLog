@@ -981,7 +981,7 @@ namespace tmp::fmt
                     if(element != arg.back())
                     {
                         argToString(buf, argument, element);
-                        buf.sputc(',');
+                        buf.sputn(", ", 2);
                     }
                     else
                         argToString(buf, argument, element);
