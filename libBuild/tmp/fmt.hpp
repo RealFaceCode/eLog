@@ -616,21 +616,21 @@ namespace tmp::fmt
 
     #pragma endregion
 
-    #pragma region FormatArgCheckAndFormer
+    #pragma region FormatArgCheck
 
-    struct FormatArgCheckAndFormer
+    struct FormatArgCheck
     {
     public:
-        FormatArgCheckAndFormer() = default;
-        FormatArgCheckAndFormer(std::vector<Argument>& argList, const std::vector<FormatType>& formatList);
-        ~FormatArgCheckAndFormer() = default;
+        FormatArgCheck() = default;
+        FormatArgCheck(std::vector<Argument>& argList, const std::vector<FormatType>& formatList);
+        ~FormatArgCheck() = default;
 
     private:
         void checkArgCount() const;
         void checkIndex();
+        void checkSpecifierSwitch(FormatSpecifier formatSpecifier, ArgumentType argType, size index) const;
         void checkSpecifier() const;
         void check();
-        void reform();
 
         bool allTrue = false;
         bool allFalse = false;
@@ -804,7 +804,7 @@ namespace tmp::fmt
         ArgParser parser(args...);
         std::vector<tmp::fmt::Argument> argList = parser.getArgList();
 
-        FormatArgCheckAndFormer formatArgCheckAndFormer(argList, formatList);
+        FormatArgCheck formatArgCheck(argList, formatList);
         FormatArgCombiner formatArgCombiner(format, argList, formatList);
 
         return formatArgCombiner.getFormattedString();
@@ -1141,21 +1141,20 @@ namespace tmp::fmt
 
     #pragma region FormatArgCheckAndFormer
 
-    FormatArgCheckAndFormer::FormatArgCheckAndFormer(std::vector<Argument>& argList, const std::vector<FormatType>& formatList)
+    FormatArgCheck::FormatArgCheck(std::vector<Argument>& argList, const std::vector<FormatType>& formatList)
     : mArgList(argList), mFormatList(formatList)
     {
         check();
-        reform();
     }
 
-    void FormatArgCheckAndFormer::checkArgCount() const
+    void FormatArgCheck::checkArgCount() const
     {
         if(mFormatList.size() > mArgList.size())
             throw ArgumentException(Format("Too few arguments passed to format string:\n\t[{}]\nExpected [{}] arguments but got [{}] arguments",
                                             mFormatList[0].format, mFormatList.size(), mArgList.size()));
     }
 
-    void FormatArgCheckAndFormer::checkIndex()
+    void FormatArgCheck::checkIndex()
     {
         allTrue = std::ranges::all_of(mFormatList, [](const FormatType& val) { return val.index.first; });
         allFalse = std::ranges::all_of(mFormatList, [](const FormatType& val) { return !val.index.first; });
@@ -1163,7 +1162,66 @@ namespace tmp::fmt
             throw ArgumentException("Either all or none of the format strings must have an index");
     }
 
-    void FormatArgCheckAndFormer::checkSpecifier() const
+    void FormatArgCheck::checkSpecifierSwitch(FormatSpecifier formatSpecifier, ArgumentType argType, size index) const
+    {
+        switch (formatSpecifier)
+            {
+            using enum FormatSpecifier;
+            case None:
+                break;
+            case FormatSpecifier::decimal:
+                if(argType != ArgumentType::Int)
+                    throw ArgumentException(Format("Argument [{}] is not of type [Int]", index));
+                break;
+            case FormatSpecifier::hexadecimal:
+            case FormatSpecifier::Hexadecimal:
+            case FormatSpecifier::octal:
+            case FormatSpecifier::binary:
+            case FormatSpecifier::scientific:
+            case FormatSpecifier::Scientific:
+                if(argType == ArgumentType::Container)
+                    throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
+                break;
+            case FormatSpecifier::floating:
+                if(argType != ArgumentType::Float && argType != ArgumentType::Double)
+                    throw ArgumentException(Format("Argument [{}] is a [Floating] type", index));
+                break;
+            case FormatSpecifier::general:
+            case FormatSpecifier::General:
+                if(argType == ArgumentType::Container)
+                    throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
+                break;
+            case FormatSpecifier::localized:
+                break;
+            case FormatSpecifier::string:
+                if(argType != ArgumentType::String)
+                    throw ArgumentException(Format("Argument [{}] is not of type [String]", index));
+                break;
+            case FormatSpecifier::character:
+                if(argType != ArgumentType::Char)
+                    throw ArgumentException(Format("Argument [{}] is not of type [Char]", index));
+                break;
+            case FormatSpecifier::year:
+            case FormatSpecifier::month:
+            case FormatSpecifier::day:
+            case FormatSpecifier::hour:
+            case FormatSpecifier::minute:
+            case FormatSpecifier::second:
+            case FormatSpecifier::day_of_year:
+                if(argType != ArgumentType::Int)
+                    throw ArgumentException(Format("Argument [{}] is not of type [Int]", index));
+                break;
+            case FormatSpecifier::weekday:
+            case FormatSpecifier::Weekday:
+                if(argType != ArgumentType::String)
+                    throw ArgumentException(Format("Argument [{}] is not of type [String]", index));
+                break;
+            default:
+                break;
+            }
+    }
+
+    void FormatArgCheck::checkSpecifier() const
     {
         std::set<size> usedIndexes;
         size index = 0;
@@ -1181,60 +1239,21 @@ namespace tmp::fmt
                     usedIndexes.insert(index);
             }
 
-            const auto& formatspecifier = format.specifier.second;
-            const auto& argSpecifier = mArgList[index].type;
+            const auto& formatSpecifier = format.specifier.second;
+            const auto& argType = mArgList[index].type;
             
-            switch (formatspecifier)
-            {
-            using enum FormatSpecifier;
-            case None:
-                break;
-            case FormatSpecifier::decimal:
-                if(argSpecifier != ArgumentType::Int)
-                    throw ArgumentException(Format("Argument [{}] is not of type [Int]", index));
-                break;
-            case FormatSpecifier::hexadecimal:
-            case FormatSpecifier::Hexadecimal:
-            case FormatSpecifier::octal:
-            case FormatSpecifier::binary:
-            case FormatSpecifier::scientific:
-            case FormatSpecifier::Scientific:
-                if(argSpecifier == ArgumentType::Container)
-                    throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
-                break;
-            case FormatSpecifier::floating:
-                if(argSpecifier != ArgumentType::Float && argSpecifier != ArgumentType::Double)
-                    throw ArgumentException(Format("Argument [{}] is a [Floating] type", index));
-                break;
-            case FormatSpecifier::general:
-            case FormatSpecifier::General:
-                if(argSpecifier == ArgumentType::Container)
-                    throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
-                break;
-            case FormatSpecifier::localized:
-                break;
-            default:
-                break;
-            }
+            checkSpecifierSwitch(formatSpecifier, argType, index);
 
             if(allFalse)
                 ++index;
         }
     }
 
-    void FormatArgCheckAndFormer::check()
+    void FormatArgCheck::check()
     {
         checkArgCount();
         checkIndex();
         checkSpecifier();
-    }
-
-    void FormatArgCheckAndFormer::reform()
-    {
-        for(auto& format : mFormatList)
-        {
-
-        }
     }
 
     #pragma endregion
