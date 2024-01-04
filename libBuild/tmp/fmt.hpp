@@ -17,6 +17,13 @@
 #include <ranges>
 #include <unordered_map>
 #include <string_view>
+#include <cctype>
+#include <locale>
+#include <codecvt>
+#include <functional>
+#include <cmath>
+#include <iomanip>
+#include <bitset>
 
 #pragma endregion
 
@@ -576,6 +583,17 @@ namespace tmp::fmt
 
     #pragma endregion
 
+    #pragma region FormatPack
+
+    struct FormatPack
+    {
+    public:
+        size count = 0;
+        std::vector<FormatType> formats;
+    };
+
+    #pragma endregion
+
     #pragma region FormatParser
 
     struct FormatParser
@@ -586,12 +604,12 @@ namespace tmp::fmt
 
         ~FormatParser() = default;
 
-        std::vector<FormatType>& getFormatList();
+        FormatPack& getFormatList();
 
     private:
         void parseFormat(const FormatString& format);
 
-        std::vector<FormatType> mFormatStrings;
+        FormatPack mFormatStrings;
     };
 
     #pragma endregion
@@ -602,11 +620,11 @@ namespace tmp::fmt
     {
     public:
         FormatInterpreter() = default;
-        explicit FormatInterpreter(std::vector<FormatType>& formatList);
+        explicit FormatInterpreter(FormatPack& formatList);
         ~FormatInterpreter() = default;
 
     private:
-        void interpret(std::vector<FormatType>& formatList) const;
+        void interpret(FormatPack& formatList) const;
         void hasSpecifier(FormatType& formatString) const;
         void hasPrecision(FormatType& formatString) const;
         void hasAlignment(FormatType& formatString) const;
@@ -622,20 +640,20 @@ namespace tmp::fmt
     {
     public:
         FormatArgCheck() = default;
-        FormatArgCheck(std::vector<Argument>& argList, const std::vector<FormatType>& formatList);
+        FormatArgCheck(const FormatString& fmt, std::vector<Argument>& argList, const FormatPack& formatList);
         ~FormatArgCheck() = default;
 
     private:
-        void checkArgCount() const;
+        void checkArgCount(const FormatString& fmt) const;
         void checkIndex();
         void checkSpecifierSwitch(FormatSpecifier formatSpecifier, ArgumentType argType, size index) const;
         void checkSpecifier() const;
-        void check();
+        void check(const FormatString& fmt);
 
         bool allTrue = false;
         bool allFalse = false;
         std::vector<Argument>& mArgList;
-        const std::vector<FormatType>& mFormatList;
+        const FormatPack& mFormatList;
     };
     
     #pragma endregion
@@ -646,13 +664,16 @@ namespace tmp::fmt
     {
     public:
         FormatArgCombiner() = default;
-        FormatArgCombiner(const FormatString& format, const std::vector<Argument>& argList, const std::vector<FormatType>& formatList);
+        FormatArgCombiner(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList);
         ~FormatArgCombiner() = default;
 
-        std::string getFormattedString() const;
+        std::string& getFormattedString();
 
     private:
-        void combine(const FormatString& format, const std::vector<Argument>& argList, const std::vector<FormatType>& formatList);
+        void precision(Argument& argument, const FormatType& format) const;
+        void alignment(Argument& argument, const FormatType& format) const;
+        void reform(Argument& argument, const FormatType& format) const;
+        void combine(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList);
 
         std::string formattedString = "";
     };
@@ -775,9 +796,9 @@ namespace tmp::fmt
         return std::string::npos;
     }
 
-    void PrintFormatList(const std::vector<FormatType>& formatList)
+    void PrintFormatList(const FormatPack& formatList)
     {
-        for (const auto& format : formatList)
+        for (const auto& format : formatList.formats)
         {
             std::cout << "format: " << format.format << std::endl;
             std::cout << "hasSpecifier: " << (format.hasSpecifier ? "true" : "false") << std::endl;
@@ -797,17 +818,17 @@ namespace tmp::fmt
     std::string Format(const FormatString& format, Args&& ...args)
     {
         FormatParser formatParser(format);
-        std::vector<FormatType> formatList = formatParser.getFormatList();
+        FormatPack& formatList = formatParser.getFormatList();
 
         FormatInterpreter formatInterpreter(formatList);
 
         ArgParser parser(args...);
         std::vector<tmp::fmt::Argument> argList = parser.getArgList();
 
-        FormatArgCheck formatArgCheck(argList, formatList);
+        FormatArgCheck formatArgCheck(format, argList, formatList);
         FormatArgCombiner formatArgCombiner(format, argList, formatList);
 
-        return formatArgCombiner.getFormattedString();
+        return std::move(formatArgCombiner.getFormattedString());
     }
 
     #pragma endregion
@@ -1000,7 +1021,7 @@ namespace tmp::fmt
         parseFormat(format);
     }
 
-    std::vector<FormatType>& FormatParser::getFormatList()
+    FormatPack& FormatParser::getFormatList()
     {
         return mFormatStrings;
     }
@@ -1023,7 +1044,7 @@ namespace tmp::fmt
             size length = endPos - beginPos + 1;
             FormatType formatType;
             formatType.format = formatString.substr(beginPos, length);
-            mFormatStrings.push_back(formatType);
+            mFormatStrings.formats.push_back(formatType);
         }
     }
 
@@ -1031,20 +1052,29 @@ namespace tmp::fmt
 
     #pragma region FormatInterpreter
 
-    FormatInterpreter::FormatInterpreter(std::vector<FormatType>& formatList)
+    FormatInterpreter::FormatInterpreter(FormatPack& formatList)
     {
         interpret(formatList);
     }
 
-    void FormatInterpreter::interpret(std::vector<FormatType>& formatList) const
+    void FormatInterpreter::interpret(FormatPack& formatList) const
     {
-        for(auto& format : formatList)
+        std::set<size> indexSet;
+
+        for(auto& format : formatList.formats)
         {
             hasSpecifier(format);
             hasPrecision(format);
             hasAlignment(format);
             hasIndex(format);
             hasFormat(format);
+
+            if(format.index.first)
+            {
+                auto [it, succes] = indexSet.insert(format.index.second);
+                if(succes)
+                    formatList.count++;
+            }
         }
     }
 
@@ -1141,23 +1171,23 @@ namespace tmp::fmt
 
     #pragma region FormatArgCheckAndFormer
 
-    FormatArgCheck::FormatArgCheck(std::vector<Argument>& argList, const std::vector<FormatType>& formatList)
+    FormatArgCheck::FormatArgCheck(const FormatString& fmt, std::vector<Argument>& argList, const FormatPack& formatList)
     : mArgList(argList), mFormatList(formatList)
     {
-        check();
+        check(fmt);
     }
 
-    void FormatArgCheck::checkArgCount() const
+    void FormatArgCheck::checkArgCount(const FormatString& fmt) const
     {
-        if(mFormatList.size() > mArgList.size())
+        if(mFormatList.count > mArgList.size())
             throw ArgumentException(Format("Too few arguments passed to format string:\n\t[{}]\nExpected [{}] arguments but got [{}] arguments",
-                                            mFormatList[0].format, mFormatList.size(), mArgList.size()));
+                                            fmt.format,  mArgList.size(), mFormatList.formats.size()));
     }
 
     void FormatArgCheck::checkIndex()
     {
-        allTrue = std::ranges::all_of(mFormatList, [](const FormatType& val) { return val.index.first; });
-        allFalse = std::ranges::all_of(mFormatList, [](const FormatType& val) { return !val.index.first; });
+        allTrue = std::ranges::all_of(mFormatList.formats, [](const FormatType& val) { return val.index.first; });
+        allFalse = std::ranges::all_of(mFormatList.formats, [](const FormatType& val) { return !val.index.first; });
         if(!allTrue && !allFalse)
             throw ArgumentException("Either all or none of the format strings must have an index");
     }
@@ -1226,12 +1256,12 @@ namespace tmp::fmt
         std::set<size> usedIndexes;
         size index = 0;
 
-        for(const auto& format : mFormatList)
+        for(const auto& format : mFormatList.formats)
         {
             if(allTrue)
                 index = format.index.second;
 
-            if(format.index.first)
+            if(format.index.first && mFormatList.formats.size() == mArgList.size())
             {
                 if(usedIndexes.contains(index))
                     throw ArgumentException(Format("Index [{}] is already used", index));
@@ -1249,9 +1279,9 @@ namespace tmp::fmt
         }
     }
 
-    void FormatArgCheck::check()
+    void FormatArgCheck::check(const FormatString& fmt)
     {
-        checkArgCount();
+        checkArgCount(fmt);
         checkIndex();
         checkSpecifier();
     }
@@ -1260,51 +1290,185 @@ namespace tmp::fmt
 
     #pragma region FormatArgCombiner
 
-    FormatArgCombiner::FormatArgCombiner(const FormatString& format, const std::vector<Argument>& argList, const std::vector<FormatType>& formatList)
+    FormatArgCombiner::FormatArgCombiner(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList)
     {
         combine(format, argList, formatList);
     }
 
-    void FormatArgCombiner::combine(const FormatString& formatString, const std::vector<Argument>& argList, const std::vector<FormatType>& formatList)
+    void FormatArgCombiner::precision(Argument& arg, const FormatType& format) const
     {
-        formattedString = formatString.format;
-
-        if(argList.size() > formatList.size())
+        if(format.precision.first)
         {
-            throw ArgumentException(Format("Too many arguments passed to format string:\n[{}]\nExpected [{}] arguments but got [{}] arguments",
-                                            formatString.format, formatList.size(), argList.size()));
-        }
-
-        std::map<size, std::string_view> usedIndexes;
-        
-        std::string arg = "";
-        size index = 0;
-
-        for(const auto& formatType : formatList)
-        {
-            size pos = formattedString.find(formatType.format);
-
-            if(formatType.index.first)
+            std::stringstream ss;
+            switch (arg.type)
             {
-                index = formatType.index.second;
-                if(usedIndexes.contains(index))
-                    throw ArgumentException(Format("Index [{}] is already used", index));
-                else
-                    usedIndexes[index] = formatType.format;
+            using enum ArgumentType;
+            case None:
+                break;
+            case String:
+                break;
+            case Int:
+                ss << std::right << std::setw(format.precision.second) << std::setfill('0') << arg.value;
+                break;
+            case Float:
+                ss << std::setprecision(format.precision.second) << std::fixed << std::stof(arg.value);
+                break;
+            case Double:
+                ss << std::setprecision(format.precision.second) << std::fixed << std::stod(arg.value);
+                break;
+            case Char:
+                break;
+            case Bool:
+                break;
+            case Pointer:
+                break;
+            case Container:
+                break;
+            default:
+                break;
             }
-            else
-            {
-                if(usedIndexes.contains(index))
-                    throw ArgumentException(Format("Index [{}] is already used", index));
-                else
-                    usedIndexes[index] = formatType.format;
-            }
-
-            formattedString.replace(pos, formatType.format.size(), argList[index++].value);
+            arg.value = ss.str();
         }
     }
 
-    std::string FormatArgCombiner::getFormattedString() const
+    void FormatArgCombiner::alignment(Argument& arg, const FormatType& format) const
+    {
+        if(format.alignment.first)
+        {
+            std::stringstream ss;
+            switch (format.alignment.second.first)
+            {
+            using enum FormatAlignment;
+            case None:
+                break;
+            case Left:
+                ss << std::left << std::setw(format.alignment.second.second) << arg.value;
+                break;
+            case Right:
+                ss << std::right << std::setw(format.alignment.second.second) << arg.value;
+                break;
+            case Center:
+            {
+                size fill = format.alignment.second.second - arg.value.size();
+                size fillLeft = fill / 2;
+                size fillRight = fill - fillLeft;
+                ss << std::left << std::setw(fillLeft) << std::setfill(' ') << "" << arg.value << std::setw(fillRight) << std::setfill(' ') << "";
+            }
+                break;
+            default:
+                break;
+            }
+            arg.value = ss.str();
+        }
+
+    }
+
+    void FormatArgCombiner::reform(Argument& arg, const FormatType& format) const
+    {
+        if(format.specifier.first)
+        {
+            std::stringstream ss;
+            switch (format.specifier.second)
+            {
+            using enum FormatSpecifier;
+            case None:
+                break;
+            case FormatSpecifier::decimal:
+                break;
+            case FormatSpecifier::hexadecimal:
+                ss << std::hex << std::stoll(arg.value);
+                break;
+            case FormatSpecifier::Hexadecimal:
+                ss << std::hex << std::uppercase << std::stoll(arg.value);
+                break;
+            case FormatSpecifier::octal:
+                ss << std::oct << std::stoll(arg.value);
+                break;
+            case FormatSpecifier::binary:
+                ss << std::bitset<sizeof(long long) * 8>(std::stoll(arg.value));
+                break;
+            case FormatSpecifier::scientific:
+                ss << std::scientific << std::stof(arg.value);
+                break;
+            case FormatSpecifier::Scientific:
+                ss << std::scientific << std::uppercase << std::stof(arg.value);
+                break;
+            case FormatSpecifier::floating:
+                break;
+            case FormatSpecifier::general:
+                throw FormatException("Format specifier [general] is not supported");
+                break;
+            case FormatSpecifier::General:
+                throw FormatException("Format specifier [General] is not supported");
+                break;
+            case FormatSpecifier::localized:
+                ss << std::use_facet<std::numpunct<char>>(ss.getloc()).thousands_sep();
+                break;
+            case FormatSpecifier::string:
+                break;
+            case FormatSpecifier::character:
+                break;
+            case FormatSpecifier::year:
+                throw FormatException("Format specifier [year] is not supported");
+                break;
+            case FormatSpecifier::month:
+                throw FormatException("Format specifier [month] is not supported");
+                break;
+            case FormatSpecifier::day:
+            throw FormatException("Format specifier [day] is not supported");
+                break;
+            case FormatSpecifier::hour:
+                throw FormatException("Format specifier [hour] is not supported");
+                break;
+            case FormatSpecifier::minute:
+                throw FormatException("Format specifier [minute] is not supported");
+                break;
+            case FormatSpecifier::second:
+                throw FormatException("Format specifier [second] is not supported");
+                break;
+            case FormatSpecifier::day_of_year:
+                throw FormatException("Format specifier [day_of_year] is not supported");
+                break;
+            case FormatSpecifier::weekday:
+                throw FormatException("Format specifier [weekday] is not supported");
+                break;
+            case FormatSpecifier::Weekday:
+                throw FormatException("Format specifier [Weekday] is not supported");
+                break;
+            default:
+                break;
+            }
+        }
+
+        precision(arg, format);
+        alignment(arg, format);
+    }
+
+    void FormatArgCombiner::combine(const FormatString& formatString, std::vector<Argument>& argList, const FormatPack& formatList)
+    {
+        formattedString = formatString.format;
+        const auto& formats = formatList.formats;
+        size index = 0;
+
+        for(const auto& formatType : formats)
+        {
+            size pos = formattedString.find(formatType.format);
+            if(pos == std::string::npos)
+                throw FormatStringException(Format("Format string [{}] is invalid", formatString.format));
+
+            if(formatType.index.first)
+                index = formatType.index.second;
+
+            auto& arg = argList[index++];
+
+            if(formatType.specifier.first || formatType.alignment.first || formatType.precision.first)
+                reform(arg, formatType);
+
+            formattedString.replace(pos, formatType.format.size(), arg.value);
+        }
+    }
+
+    std::string& FormatArgCombiner::getFormattedString()
     {
         return formattedString;
     }
