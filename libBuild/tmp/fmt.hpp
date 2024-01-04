@@ -24,6 +24,7 @@
 #include <cmath>
 #include <iomanip>
 #include <bitset>
+#include <cstring>
 
 #pragma endregion
 
@@ -515,11 +516,17 @@ namespace tmp::fmt
     struct Argument
     {
     public:
+        Argument() = default;
+        Argument(const Argument&) = default;
+        Argument(Argument&&) noexcept = default;
+        Argument& operator=(const Argument&) = default;
+        Argument& operator=(Argument&&) noexcept = default;
+
         void setArgumentType(ArgumentType type);
 
         ArgumentType type = ArgumentType::None;
         ContainerType containerType = ContainerType::None; //TODO: REMOVE?
-        std::string value = "";
+        std::stringbuf value;
     };
 
     #pragma endregion
@@ -555,7 +562,7 @@ namespace tmp::fmt
 
     private:
         template <typename Arg>
-        void argToString(std::stringstream& ss, Argument& argument, Arg& arg);
+        void argToString(std::stringbuf& ss, Argument& argument, Arg& arg);
 
         template<typename Arg>
         void parseArg(Arg& arg);
@@ -822,7 +829,7 @@ namespace tmp::fmt
         FormatInterpreter formatInterpreter(formatList);
 
         ArgParser parser(args...);
-        std::vector<tmp::fmt::Argument> argList = parser.getArgList();
+        std::vector<tmp::fmt::Argument>& argList = parser.getArgList();
 
         FormatArgCheck formatArgCheck(format, argList, formatList);
         FormatArgCombiner formatArgCombiner(format, argList, formatList);
@@ -913,73 +920,86 @@ namespace tmp::fmt
     }
 
     template <typename Arg>
-    void ArgParser::argToString(std::stringstream& ss, Argument& argument, Arg& arg)
+    void ArgParser::argToString(std::stringbuf& buf, Argument& argument, Arg& arg)
     {
         if constexpr (is_string_type_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::String);
-            ss << arg;
+            if constexpr (is_cstring_v<not_ref_type<Arg>>)
+            {
+                buf.sputn(arg, strlen(arg));
+            }
+            else
+            {
+                buf.sputn(arg.data(), arg.size());
+            }
         }
         else if constexpr (is_integer_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Int);
-            ss << arg;
+            auto r = std::to_string(arg);
+            buf.sputn(r.data(), r.size());
         }
         else if constexpr (is_float_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Float);
-            ss << arg;
+            auto r = std::to_string(arg);
+            buf.sputn(r.data(), r.size());
         }
         else if constexpr (is_double_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Double);
-            ss << arg;
+            auto r = std::to_string(arg);
+            buf.sputn(r.data(), r.size());
         }
         else if constexpr (is_bool_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Bool);
-            ss << arg;
+            auto r = std::to_string(arg);
+            buf.sputn(r.data(), r.size());
         }
         else if constexpr (is_pointer_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Pointer);
-            ss << arg;
+            auto r = std::to_string((uintptr_t)arg);
+            buf.sputn(r.data(), r.size());
         }
         else if constexpr (is_container_v<not_ref_type<Arg>> && !is_string_type_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Container);
 
-            ss << "[";
+            buf.sputc('[');
             for(auto& element : arg)
             {
                 if constexpr (is_container_v<decltype(element)> || is_pair_v<decltype(element)>)
                 {
-                    argToString(ss, argument, element);
+                    argToString(buf, argument, element);
                     if(element != arg.back())
-                        ss << ", ";
+                        buf.sputn(", ", 2);
                 }
                 else
                 {
                     if(element != arg.back())
-                        ss << element << ", ";
+                    {
+                        argToString(buf, argument, element);
+                        buf.sputc(',');
+                    }
                     else
-                        ss << element;
+                        argToString(buf, argument, element);
                 }
-
-                
             }
-            ss << "]";
+            buf.sputc(']');
         }
         else if constexpr (is_pair_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Container);
             argument.containerType = ContainerType::Pair;
 
-            ss << "[First: ";
-            argToString(ss, argument, arg.first);
-            ss << ", Second: ";
-            argToString(ss, argument, arg.second);
-            ss << "]";
+            buf.sputn("[First: ", 8);
+            argToString(buf, argument, arg.first);
+            buf.sputn(", Second: ", 10);
+            argToString(buf, argument, arg.second);
+            buf.sputc(']');	
         }
         else
         {
@@ -991,12 +1011,12 @@ namespace tmp::fmt
     void ArgParser::parseArg(Arg& arg)
     {
         Argument argument;
-        std::stringstream ss;
+        std::stringbuf buf;
         
-        argToString(ss, argument, arg);
+        argToString(buf, argument, arg);
 
-        argument.value = ss.str();
-        mArguments.push_back(argument);
+        argument.value = std::move(buf);
+        mArguments.push_back(std::move(argument));
     }
 
     template<typename... Args>
@@ -1307,13 +1327,13 @@ namespace tmp::fmt
             case String:
                 break;
             case Int:
-                ss << std::right << std::setw(format.precision.second) << std::setfill('0') << arg.value;
+                ss << std::right << std::setw(format.precision.second) << std::setfill('0') << arg.value.view();
                 break;
             case Float:
-                ss << std::setprecision(format.precision.second) << std::fixed << std::stof(arg.value);
+                ss << std::setprecision(format.precision.second) << std::fixed << std::stof(arg.value.view().data());
                 break;
             case Double:
-                ss << std::setprecision(format.precision.second) << std::fixed << std::stod(arg.value);
+                ss << std::setprecision(format.precision.second) << std::fixed << std::stod(arg.value.view().data());
                 break;
             case Char:
                 break;
@@ -1326,7 +1346,7 @@ namespace tmp::fmt
             default:
                 break;
             }
-            arg.value = ss.str();
+            arg.value.sputn(ss.view().data(), ss.view().size());
         }
     }
 
@@ -1341,23 +1361,23 @@ namespace tmp::fmt
             case None:
                 break;
             case Left:
-                ss << std::left << std::setw(format.alignment.second.second) << arg.value;
+                ss << std::left << std::setw(format.alignment.second.second) << arg.value.view();
                 break;
             case Right:
-                ss << std::right << std::setw(format.alignment.second.second) << arg.value;
+                ss << std::right << std::setw(format.alignment.second.second) << arg.value.view();
                 break;
             case Center:
             {
-                size fill = format.alignment.second.second - arg.value.size();
+                size fill = format.alignment.second.second - arg.value.view().size();
                 size fillLeft = fill / 2;
                 size fillRight = fill - fillLeft;
-                ss << std::left << std::setw(fillLeft) << std::setfill(' ') << "" << arg.value << std::setw(fillRight) << std::setfill(' ') << "";
+                ss << std::left << std::setw(fillLeft) << std::setfill(' ') << "" << arg.value.view() << std::setw(fillRight) << std::setfill(' ') << "";
             }
                 break;
             default:
                 break;
             }
-            arg.value = ss.str();
+            arg.value.sputn(ss.view().data(), ss.view().size());
         }
 
     }
@@ -1375,22 +1395,22 @@ namespace tmp::fmt
             case FormatSpecifier::decimal:
                 break;
             case FormatSpecifier::hexadecimal:
-                ss << std::hex << std::stoll(arg.value);
+                ss << std::hex << std::stoll(arg.value.view().data());
                 break;
             case FormatSpecifier::Hexadecimal:
-                ss << std::hex << std::uppercase << std::stoll(arg.value);
+                ss << std::hex << std::uppercase << std::stoll(arg.value.view().data());
                 break;
             case FormatSpecifier::octal:
-                ss << std::oct << std::stoll(arg.value);
+                ss << std::oct << std::stoll(arg.value.view().data());
                 break;
             case FormatSpecifier::binary:
-                ss << std::bitset<sizeof(long long) * 8>(std::stoll(arg.value));
+                ss << std::bitset<sizeof(long long) * 8>(std::stoll(arg.value.view().data()));
                 break;
             case FormatSpecifier::scientific:
-                ss << std::scientific << std::stof(arg.value);
+                ss << std::scientific << std::stof(arg.value.view().data());
                 break;
             case FormatSpecifier::Scientific:
-                ss << std::scientific << std::uppercase << std::stof(arg.value);
+                ss << std::scientific << std::uppercase << std::stof(arg.value.view().data());
                 break;
             case FormatSpecifier::floating:
                 break;
@@ -1401,7 +1421,7 @@ namespace tmp::fmt
                 throw FormatException("Format specifier [General] is not supported");
                 break;
             case FormatSpecifier::localized:
-                ss << std::use_facet<std::numpunct<char>>(ss.getloc()).thousands_sep();
+                ss << std::use_facet<std::numpunct<char>>(ss.getloc()).thousands_sep() << arg.value.view();
                 break;
             case FormatSpecifier::string:
                 break;
@@ -1437,6 +1457,7 @@ namespace tmp::fmt
             default:
                 break;
             }
+            arg.value.sputn(ss.view().data(), ss.view().size());
         }
 
         precision(arg, format);
@@ -1463,7 +1484,7 @@ namespace tmp::fmt
             if(formatType.specifier.first || formatType.alignment.first || formatType.precision.first)
                 reform(arg, formatType);
 
-            formattedString.replace(pos, formatType.format.size(), arg.value);
+            formattedString.replace(pos, formatType.format.size(), arg.value.view());
         }
     }
 
