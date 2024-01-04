@@ -39,6 +39,9 @@ using size = size_t;
 
 using SourceLoc = std::source_location;
 
+template <typename T>
+using not_ref_type = std::remove_reference_t<T>;
+
 #pragma endregion
 
 #pragma region exeptions
@@ -187,7 +190,12 @@ namespace tmp::fmt
     // check for string or string_view type
     template <typename T>
     struct is_string {
-        static constexpr bool value = std::is_same_v<T, std::string>;
+        static constexpr bool value = std::is_same_v<T, std::string>
+                                    || std::is_same_v<T, const std::string>
+                                    || std::is_same_v<T, std::string&>
+                                    || std::is_same_v<T, const std::string&>
+                                    || std::is_same_v<T, std::string*>
+                                    || std::is_same_v<T, const std::string*>;
     };
 
     template <typename T>
@@ -195,7 +203,12 @@ namespace tmp::fmt
 
     template <typename T>
     struct is_string_view {
-        static constexpr bool value = std::is_same_v<T, std::string_view>;
+        static constexpr bool value = std::is_same_v<T, std::string_view>
+                                    || std::is_same_v<T, const std::string_view>
+                                    || std::is_same_v<T, std::string_view&>
+                                    || std::is_same_v<T, const std::string_view&>
+                                    || std::is_same_v<T, std::string_view*>
+                                    || std::is_same_v<T, const std::string_view*>;
     };
 
     template <typename T>
@@ -376,6 +389,7 @@ namespace tmp::fmt
     template <typename T>
     constexpr bool is_pair_v = is_pair<T>::value;
 }
+
 #pragma endregion
 
 #pragma region constexpr functions
@@ -495,8 +509,10 @@ namespace tmp::fmt
     struct Argument
     {
     public:
+        void setArgumentType(ArgumentType type);
+
         ArgumentType type = ArgumentType::None;
-        ContainerType containerType = ContainerType::None;
+        ContainerType containerType = ContainerType::None; //TODO: REMOVE?
         std::string value = "";
     };
 
@@ -532,6 +548,9 @@ namespace tmp::fmt
         std::vector<Argument>& getArgList();
 
     private:
+        template <typename Arg>
+        void argToString(std::stringstream& ss, Argument& argument, Arg& arg);
+
         template<typename Arg>
         void parseArg(Arg& arg);
 
@@ -597,6 +616,30 @@ namespace tmp::fmt
 
     #pragma endregion
 
+    #pragma region FormatArgCheckAndFormer
+
+    struct FormatArgCheckAndFormer
+    {
+    public:
+        FormatArgCheckAndFormer() = default;
+        FormatArgCheckAndFormer(std::vector<Argument>& argList, const std::vector<FormatType>& formatList);
+        ~FormatArgCheckAndFormer() = default;
+
+    private:
+        void checkArgCount() const;
+        void checkIndex();
+        void checkSpecifier() const;
+        void check();
+        void reform();
+
+        bool allTrue = false;
+        bool allFalse = false;
+        std::vector<Argument>& mArgList;
+        const std::vector<FormatType>& mFormatList;
+    };
+    
+    #pragma endregion
+
     #pragma region FormatArgCombiner
 
     struct FormatArgCombiner
@@ -605,6 +648,8 @@ namespace tmp::fmt
         FormatArgCombiner() = default;
         FormatArgCombiner(const FormatString& format, const std::vector<Argument>& argList, const std::vector<FormatType>& formatList);
         ~FormatArgCombiner() = default;
+
+        std::string getFormattedString() const;
 
     private:
         void combine(const FormatString& format, const std::vector<Argument>& argList, const std::vector<FormatType>& formatList);
@@ -749,9 +794,20 @@ namespace tmp::fmt
     #pragma region Format
 
     template<typename... Args>
-    std::string format(const std::string& format, Args&& ...args)
+    std::string Format(const FormatString& format, Args&& ...args)
     {
-        return "";
+        FormatParser formatParser(format);
+        std::vector<FormatType> formatList = formatParser.getFormatList();
+
+        FormatInterpreter formatInterpreter(formatList);
+
+        ArgParser parser(args...);
+        std::vector<tmp::fmt::Argument> argList = parser.getArgList();
+
+        FormatArgCheckAndFormer formatArgCheckAndFormer(argList, formatList);
+        FormatArgCombiner formatArgCombiner(format, argList, formatList);
+
+        return formatArgCombiner.getFormattedString();
     }
 
     #pragma endregion
@@ -797,6 +853,16 @@ namespace tmp::fmt
 
     #pragma endregion
 
+    #pragma region Argument
+
+    void Argument::setArgumentType(ArgumentType type)
+    {
+        if(this->type == ArgumentType::None)
+            this->type = type;
+    }
+
+    #pragma endregion
+
     #pragma region FormatString
 
     FormatString::FormatString(const std::string& format, const SourceLoc& loc)
@@ -826,57 +892,90 @@ namespace tmp::fmt
         return mArguments;
     }
 
+    template <typename Arg>
+    void ArgParser::argToString(std::stringstream& ss, Argument& argument, Arg& arg)
+    {
+        if constexpr (is_string_type_v<not_ref_type<Arg>>)
+        {
+            argument.setArgumentType(ArgumentType::String);
+            ss << arg;
+        }
+        else if constexpr (is_integer_v<not_ref_type<Arg>>)
+        {
+            argument.setArgumentType(ArgumentType::Int);
+            ss << arg;
+        }
+        else if constexpr (is_float_v<not_ref_type<Arg>>)
+        {
+            argument.setArgumentType(ArgumentType::Float);
+            ss << arg;
+        }
+        else if constexpr (is_double_v<not_ref_type<Arg>>)
+        {
+            argument.setArgumentType(ArgumentType::Double);
+            ss << arg;
+        }
+        else if constexpr (is_bool_v<not_ref_type<Arg>>)
+        {
+            argument.setArgumentType(ArgumentType::Bool);
+            ss << arg;
+        }
+        else if constexpr (is_pointer_v<not_ref_type<Arg>>)
+        {
+            argument.setArgumentType(ArgumentType::Pointer);
+            ss << arg;
+        }
+        else if constexpr (is_container_v<not_ref_type<Arg>> && !is_string_type_v<not_ref_type<Arg>>)
+        {
+            argument.setArgumentType(ArgumentType::Container);
+
+            ss << "[";
+            for(auto& element : arg)
+            {
+                if constexpr (is_container_v<decltype(element)> || is_pair_v<decltype(element)>)
+                {
+                    argToString(ss, argument, element);
+                    if(element != arg.back())
+                        ss << ", ";
+                }
+                else
+                {
+                    if(element != arg.back())
+                        ss << element << ", ";
+                    else
+                        ss << element;
+                }
+
+                
+            }
+            ss << "]";
+        }
+        else if constexpr (is_pair_v<not_ref_type<Arg>>)
+        {
+            argument.setArgumentType(ArgumentType::Container);
+            argument.containerType = ContainerType::Pair;
+
+            ss << "[First: ";
+            argToString(ss, argument, arg.first);
+            ss << ", Second: ";
+            argToString(ss, argument, arg.second);
+            ss << "]";
+        }
+        else
+        {
+            throw ArgumentException("Argument type not supported");
+        }
+    }
+
     template<typename Arg>
     void ArgParser::parseArg(Arg& arg)
     {
         Argument argument;
         std::stringstream ss;
+        
+        argToString(ss, argument, arg);
 
-        if constexpr (is_string_type_v<Arg>)
-        {
-            argument.type = ArgumentType::String;
-            argument.value = arg;
-        }
-        else if constexpr (is_integer_v<Arg>)
-        {
-            argument.type = ArgumentType::Int;
-            ss << arg;
-            argument.value = ss.str();
-        }
-        else if constexpr (is_float_v<Arg>)
-        {
-            argument.type = ArgumentType::Float;
-            ss << arg;
-            argument.value = ss.str();
-        }
-        else if constexpr (is_double_v<Arg>)
-        {
-            argument.type = ArgumentType::Double;
-            ss << arg;
-            argument.value = ss.str();
-        }
-        else if constexpr (is_bool_v<Arg>)
-        {
-            argument.type = ArgumentType::Bool;
-            ss << arg;
-            argument.value = ss.str();
-        }
-        else if constexpr (is_pointer_v<Arg>)
-        {
-            argument.type = ArgumentType::Pointer;
-            ss << arg;
-            argument.value = ss.str();
-        }
-        else if constexpr (is_container_v<Arg>)
-        {
-            argument.type = ArgumentType::Container;
-            throw ArgumentException("Container not supported yet");
-        }
-        else
-        {
-            throw ArgumentException("Type not supported");
-        }
-
+        argument.value = ss.str();
         mArguments.push_back(argument);
     }
 
@@ -884,6 +983,9 @@ namespace tmp::fmt
     void ArgParser::parseArgs(Args&& ...args)
     {
         size numArgs = sizeof...(Args);
+        if(numArgs == 0)
+            return;
+
         mArguments.reserve(numArgs);
 
         (parseArg(args), ...);
@@ -938,7 +1040,6 @@ namespace tmp::fmt
     {
         for(auto& format : formatList)
         {
-            std::cout << format.format << std::endl;
             hasSpecifier(format);
             hasPrecision(format);
             hasAlignment(format);
@@ -966,7 +1067,7 @@ namespace tmp::fmt
 
     void FormatInterpreter::hasAlignment(FormatType& formatString) const
     {
-        static const std::unordered_map<std::string, FormatAlignment> alignmentSet =
+        static const std::unordered_map<std::string, FormatAlignment, StringHasher, StringEqual> alignmentSet =
         {
             {"<", FormatAlignment::Left},
             {">", FormatAlignment::Right},
@@ -1038,6 +1139,106 @@ namespace tmp::fmt
 
     #pragma endregion
 
+    #pragma region FormatArgCheckAndFormer
+
+    FormatArgCheckAndFormer::FormatArgCheckAndFormer(std::vector<Argument>& argList, const std::vector<FormatType>& formatList)
+    : mArgList(argList), mFormatList(formatList)
+    {
+        check();
+        reform();
+    }
+
+    void FormatArgCheckAndFormer::checkArgCount() const
+    {
+        if(mFormatList.size() > mArgList.size())
+            throw ArgumentException(Format("Too few arguments passed to format string:\n\t[{}]\nExpected [{}] arguments but got [{}] arguments",
+                                            mFormatList[0].format, mFormatList.size(), mArgList.size()));
+    }
+
+    void FormatArgCheckAndFormer::checkIndex()
+    {
+        allTrue = std::ranges::all_of(mFormatList, [](const FormatType& val) { return val.index.first; });
+        allFalse = std::ranges::all_of(mFormatList, [](const FormatType& val) { return !val.index.first; });
+        if(!allTrue && !allFalse)
+            throw ArgumentException("Either all or none of the format strings must have an index");
+    }
+
+    void FormatArgCheckAndFormer::checkSpecifier() const
+    {
+        std::set<size> usedIndexes;
+        size index = 0;
+
+        for(const auto& format : mFormatList)
+        {
+            if(allTrue)
+                index = format.index.second;
+
+            if(format.index.first)
+            {
+                if(usedIndexes.contains(index))
+                    throw ArgumentException(Format("Index [{}] is already used", index));
+                else
+                    usedIndexes.insert(index);
+            }
+
+            const auto& formatspecifier = format.specifier.second;
+            const auto& argSpecifier = mArgList[index].type;
+            
+            switch (formatspecifier)
+            {
+            using enum FormatSpecifier;
+            case None:
+                break;
+            case FormatSpecifier::decimal:
+                if(argSpecifier != ArgumentType::Int)
+                    throw ArgumentException(Format("Argument [{}] is not of type [Int]", index));
+                break;
+            case FormatSpecifier::hexadecimal:
+            case FormatSpecifier::Hexadecimal:
+            case FormatSpecifier::octal:
+            case FormatSpecifier::binary:
+            case FormatSpecifier::scientific:
+            case FormatSpecifier::Scientific:
+                if(argSpecifier == ArgumentType::Container)
+                    throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
+                break;
+            case FormatSpecifier::floating:
+                if(argSpecifier != ArgumentType::Float && argSpecifier != ArgumentType::Double)
+                    throw ArgumentException(Format("Argument [{}] is a [Floating] type", index));
+                break;
+            case FormatSpecifier::general:
+            case FormatSpecifier::General:
+                if(argSpecifier == ArgumentType::Container)
+                    throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
+                break;
+            case FormatSpecifier::localized:
+                break;
+            default:
+                break;
+            }
+
+            if(allFalse)
+                ++index;
+        }
+    }
+
+    void FormatArgCheckAndFormer::check()
+    {
+        checkArgCount();
+        checkIndex();
+        checkSpecifier();
+    }
+
+    void FormatArgCheckAndFormer::reform()
+    {
+        for(auto& format : mFormatList)
+        {
+
+        }
+    }
+
+    #pragma endregion
+
     #pragma region FormatArgCombiner
 
     FormatArgCombiner::FormatArgCombiner(const FormatString& format, const std::vector<Argument>& argList, const std::vector<FormatType>& formatList)
@@ -1047,16 +1248,46 @@ namespace tmp::fmt
 
     void FormatArgCombiner::combine(const FormatString& formatString, const std::vector<Argument>& argList, const std::vector<FormatType>& formatList)
     {
-        const std::string& format = formatString.format;
+        formattedString = formatString.format;
 
         if(argList.size() > formatList.size())
         {
-            throw ArgumentException("Too many arguments");
+            throw ArgumentException(Format("Too many arguments passed to format string:\n[{}]\nExpected [{}] arguments but got [{}] arguments",
+                                            formatString.format, formatList.size(), argList.size()));
         }
+
+        std::map<size, std::string_view> usedIndexes;
+        
+        std::string arg = "";
+        size index = 0;
 
         for(const auto& formatType : formatList)
         {
+            size pos = formattedString.find(formatType.format);
+
+            if(formatType.index.first)
+            {
+                index = formatType.index.second;
+                if(usedIndexes.contains(index))
+                    throw ArgumentException(Format("Index [{}] is already used", index));
+                else
+                    usedIndexes[index] = formatType.format;
+            }
+            else
+            {
+                if(usedIndexes.contains(index))
+                    throw ArgumentException(Format("Index [{}] is already used", index));
+                else
+                    usedIndexes[index] = formatType.format;
+            }
+
+            formattedString.replace(pos, formatType.format.size(), argList[index++].value);
         }
+    }
+
+    std::string FormatArgCombiner::getFormattedString() const
+    {
+        return formattedString;
     }
 
     #pragma endregion
