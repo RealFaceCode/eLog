@@ -1379,7 +1379,6 @@ namespace tmp::fmt
             }
             arg.value.sputn(ss.view().data(), ss.view().size());
         }
-
     }
 
     void FormatArgCombiner::reform(Argument& arg, const FormatType& format) const
