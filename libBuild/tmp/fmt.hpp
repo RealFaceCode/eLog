@@ -921,6 +921,7 @@ namespace tmp::fmt
     template <typename Arg>
     void ArgParser::argToString(std::stringbuf& buf, Argument& argument, Arg& arg)
     {
+        std::stringstream ss;
         if constexpr (is_string_type_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::String);
@@ -936,32 +937,37 @@ namespace tmp::fmt
         else if constexpr (is_integer_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Int);
-            auto r = std::to_string(arg);
-            buf.sputn(r.data(), r.size());
+            ss << arg;
+            auto view = ss.view();
+            buf.sputn(view.data(), view.size());
         }
         else if constexpr (is_float_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Float);
-            auto r = std::to_string(arg);
-            buf.sputn(r.data(), r.size());
+            ss << arg;
+            auto view = ss.view();
+            buf.sputn(view.data(), view.size());
         }
         else if constexpr (is_double_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Double);
-            auto r = std::to_string(arg);
-            buf.sputn(r.data(), r.size());
+            ss << arg;
+            auto view = ss.view();
+            buf.sputn(view.data(), view.size());
         }
         else if constexpr (is_bool_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Bool);
-            auto r = std::to_string(arg);
-            buf.sputn(r.data(), r.size());
+            ss << arg;
+            auto view = ss.view();
+            buf.sputn(view.data(), view.size());
         }
         else if constexpr (is_pointer_v<not_ref_type<Arg>>)
         {
             argument.setArgumentType(ArgumentType::Pointer);
-            auto r = std::to_string((uintptr_t)arg);
-            buf.sputn(r.data(), r.size());
+            ss << (uintptr_t)arg;
+            auto view = ss.view();
+            buf.sputn(view.data(), view.size());
         }
         else if constexpr (is_container_v<not_ref_type<Arg>> && !is_string_type_v<not_ref_type<Arg>>)
         {
@@ -1356,6 +1362,7 @@ namespace tmp::fmt
     {
         if(format.alignment.first)
         {
+            auto argView = arg.value.view();
             std::stringstream ss;
             switch (format.alignment.second.first)
             {
@@ -1363,17 +1370,17 @@ namespace tmp::fmt
             case None:
                 break;
             case Left:
-                ss << std::left << std::setw(format.alignment.second.second) << std::setfill(' ') << arg.value.view();
+                ss << std::left << std::setw(format.alignment.second.second) << std::setfill(' ') << argView;
                 break;
             case Right:
-                ss << std::right << std::setw(format.alignment.second.second) << std::setfill(' ') << arg.value.view();
+                ss << std::right << std::setw(format.alignment.second.second) << std::setfill(' ') << argView;
                 break;
             case Center:
             {
                 size fill = format.alignment.second.second - arg.value.view().size();
                 size fillLeft = fill / 2;
                 size fillRight = fill - fillLeft;
-                ss << std::left << std::setw(fillLeft) << std::setfill(' ') << "" << arg.value.view() << std::setw(fillRight) << std::setfill(' ') << "";
+                ss << std::left << std::setw(fillLeft) << std::setfill(' ') << "" << argView << std::setw(fillRight) << std::setfill(' ') << "";
             }
                 break;
             default:
