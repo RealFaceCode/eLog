@@ -1,6 +1,6 @@
 #pragma once
 #include <exception>
-#include "../libBuild/tmp/fmt.hpp"
+#include "../libBuild/hdr/fmt.hpp"
 
 class assert_exception : public std::exception
 {
@@ -16,6 +16,6 @@ void assert(LHS lhs, RHS rhs)
 {
     if (lhs != rhs)
     {
-        throw assert_exception(tmp::fmt::Format("Assertion failed: {} != {}", lhs, rhs).c_str());
+        throw assert_exception(elog::fmt::Format("Assertion failed: {} != {}", lhs, rhs).c_str());
     }
 }

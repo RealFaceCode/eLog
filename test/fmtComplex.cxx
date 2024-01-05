@@ -1,6 +1,6 @@
-#include "../libBuild/tmp/fmt.hpp"
+#include "../libBuild/hdr/fmt.hpp"
 #include "assert.h"
-using namespace tmp::fmt;
+using namespace elog::fmt;
 
 void textComplex()
 {

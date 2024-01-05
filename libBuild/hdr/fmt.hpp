@@ -54,7 +54,7 @@ using not_ref_type = std::remove_reference_t<T>;
 
 #pragma region exeptions
 
-namespace tmp::fmt
+namespace elog::fmt
 {
     #pragma region FormatException
 
@@ -143,7 +143,7 @@ namespace tmp::fmt
 
 #pragma region constexpr checks
 
-namespace tmp::fmt
+namespace elog::fmt
 {
     template <typename T>
     struct is_container {
@@ -406,7 +406,7 @@ namespace tmp::fmt
 
 #pragma region enums
 
-namespace tmp::fmt
+namespace elog::fmt
 {
     #pragma region ArgumentType
 
@@ -486,7 +486,7 @@ namespace tmp::fmt
 
 #pragma region structs & classes declaration
 
-namespace tmp::fmt
+namespace elog::fmt
 {
     #pragma region Helper
 
@@ -690,7 +690,7 @@ namespace tmp::fmt
 
 #pragma region functions
 
-namespace tmp::fmt
+namespace elog::fmt
 {
     #pragma region FormatAlignmentToString && FormatSpecifierToString
 
@@ -698,7 +698,7 @@ namespace tmp::fmt
     {
         switch (alignment)
         {
-        using enum tmp::fmt::FormatAlignment;
+        using enum elog::fmt::FormatAlignment;
         case None:
             return "None";
         case Left:
@@ -716,7 +716,7 @@ namespace tmp::fmt
     {
         switch (specifier)
         {
-        using enum tmp::fmt::FormatSpecifier;
+        using enum elog::fmt::FormatSpecifier;
         case None:
             return "None";
         case FormatSpecifier::decimal:
@@ -828,7 +828,7 @@ namespace tmp::fmt
         FormatInterpreter formatInterpreter(formatList);
 
         ArgParser parser(args...);
-        std::vector<tmp::fmt::Argument>& argList = parser.getArgList();
+        std::vector<elog::fmt::Argument>& argList = parser.getArgList();
 
         FormatArgCheck formatArgCheck(format, argList, formatList);
         FormatArgCombiner formatArgCombiner(format, argList, formatList);
@@ -843,7 +843,7 @@ namespace tmp::fmt
 
 #pragma region structs & classes implementation
 
-namespace tmp::fmt
+namespace elog::fmt
 {
     #pragma region Helper
 
