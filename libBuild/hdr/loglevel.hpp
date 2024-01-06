@@ -2,7 +2,6 @@
 
 #include <string_view>
 #include <vector>
-#include <set>
 #include <optional>
 
 namespace elog
@@ -19,7 +18,7 @@ namespace elog
         {
         public:
             enums::Color color;
-            std::set<enums::Effect> effect;
+            std::vector<enums::Effect> effect;
         };
     }
 

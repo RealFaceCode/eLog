@@ -51,6 +51,24 @@ namespace elog
         {
             return static_cast<unsigned int>(flag) & static_cast<unsigned int>(check);
         }
+
+        const std::string& GetResetColor()
+        {
+            auto& state = *internal::GetState().get();
+            return state.resetColor;
+        }
+
+        const std::string& GetTimeFormat()
+        {
+            auto& state = *internal::GetState().get();
+            return state.timeFormat;
+        }
+
+        const std::string& GetDateFormat()
+        {
+            auto& state = *internal::GetState().get();
+            return state.dateFormat;
+        }
     }
 
     void Init()
@@ -60,6 +78,9 @@ namespace elog
             
         structs::state = std::make_shared<structs::State>();
         structs::state->flags = static_cast<unsigned int>(enums::StateFlag::DEFAULT);
+        structs::state->resetColor = "\033[0m";
+        structs::state->timeFormat = "%H:%M:%S";
+        structs::state->dateFormat = "%Y-%m-%d";
 
         internal::SetColorToState();
         internal::SetLogLevels();
@@ -98,5 +119,17 @@ namespace elog
         }
 
         state.flags ^= static_cast<unsigned int>(flag);
+    }
+
+    void SetTimeFormat(std::string_view format)
+    {
+        auto& state = *internal::GetState().get();
+        state.timeFormat = format;
+    }
+
+    void SetDateFormat(std::string_view format)
+    {
+        auto& state = *internal::GetState().get();
+        state.dateFormat = format;
     }
 }

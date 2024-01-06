@@ -30,12 +30,7 @@ namespace elog
     void AddLogLevel(std::string_view logLevel, enums::Color color, const std::vector<enums::Effect>& effect)
     {
         auto& state = *internal::GetState().get();
-
-        structs::LogColor ll = {color, {}};
-        for(auto& e : effect)
-            ll.effect.insert(e);
-
-        state.logLevels.insert({std::string(logLevel), ll});
+        state.logLevels.insert({std::string(logLevel), {color, effect}});
     }
 
     void ChangeLogLevelColor(std::string_view logLevel, enums::Color color)
@@ -49,11 +44,7 @@ namespace elog
     {
         auto option = internal::GetLogColor(logLevel);
         if(option.has_value())
-        {
-            option.value().get().effect.clear();
-            for(auto& e : effect)
-                option.value().get().effect.insert(e);
-        }
+            option.value().get().effect = effect;
     }
 
     void RemoveLogLevel(std::string_view logLevel)

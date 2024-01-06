@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <string_view>
+#include <queue>
 
 namespace elog
 {
@@ -61,7 +63,11 @@ namespace elog
             std::unordered_map<std::string, LogColor> logLevels;
             std::unordered_map<enums::Color, std::string> logColors;
             std::unordered_map<enums::Effect, std::string> logEffects;
+            std::queue<Msg<>> msgQueue;
             unsigned int flags;
+            std::string resetColor;
+            std::string timeFormat;
+            std::string dateFormat;
         };
     }
 
@@ -69,9 +75,14 @@ namespace elog
     {
         std::shared_ptr<structs::State> GetState();
         bool IsFlagSet(enums::StateFlag flag);
+        const std::string& GetResetColor();
+        const std::string& GetTimeFormat();
+        const std::string& GetDateFormat();
     }
 
     void Init();
     void SetState(enums::StateFlag flags);
     void ToggleState(enums::StateFlag flag);
+    void SetTimeFormat(std::string_view format);
+    void SetDateFormat(std::string_view format);
 }
