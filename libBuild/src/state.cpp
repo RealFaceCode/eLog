@@ -1,6 +1,7 @@
 #include "state.hpp"
 
 #include "logcolor.hpp"
+#include "loglevel.hpp"
 
 namespace elog
 {
@@ -42,8 +43,12 @@ namespace elog
 
     void Init()
     {
+        if(structs::state)
+            return;
+            
         structs::state = std::make_shared<structs::State>();
         internal::SetColorToState();
+        internal::SetLogLevels();
     }
 
     void SetState(enums::StateFlag flag)

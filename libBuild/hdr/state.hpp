@@ -43,9 +43,11 @@ namespace elog
 
     namespace structs
     {
+        struct LogColor;
+
         struct State
-        {   
-            std::unordered_map<std::string, std::string> logLevels;
+        {
+            std::unordered_map<std::string, LogColor> logLevels;
             std::unordered_map<enums::Color, std::string> logColors;
             std::unordered_map<enums::Effect, std::string> logEffects;
         };
