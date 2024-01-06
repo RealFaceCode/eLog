@@ -26,8 +26,11 @@ namespace elog
     namespace internal
     {
         void SetLogLevels();
-        std::optional<const structs::LogColor&> GetLogColor(std::string_view logLevel);
+        std::optional<std::reference_wrapper<structs::LogColor>> GetLogColor(std::string_view logLevel);
     }
 
     void AddLogLevel(std::string_view logLevel, enums::Color color, const std::vector<enums::Effect>& effect = {});
+    void ChangeLogLevelColor(std::string_view logLevel, enums::Color color);
+    void ChangeLogLevelEffect(std::string_view logLevel, const std::vector<enums::Effect>& effect);
+    void RemoveLogLevel(std::string_view logLevel);
 }
