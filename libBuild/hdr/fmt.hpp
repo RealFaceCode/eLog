@@ -25,6 +25,7 @@
 #include <iomanip>
 #include <bitset>
 #include <cstring>
+#include <chrono>
 
 #pragma endregion
 
@@ -768,6 +769,8 @@ namespace elog::fmt
         }
     }
 
+
+
     #pragma endregion
 
     #pragma region Helper
@@ -837,6 +840,30 @@ namespace elog::fmt
     }
 
     #pragma endregion
+
+    #pragma region Date && Time
+
+    std::string Date(std::string_view format = "%Y-%m-%d")
+    {
+        auto currentTime = std::chrono::system_clock::now();
+        auto localTime = std::chrono::system_clock::to_time_t(currentTime);
+        
+        std::tm result;
+        #ifdef _WIN32
+            localtime_s(&result, &localTime);
+        #else
+            localtime_r(&localTime, &result);
+        #endif
+
+        std::ostringstream oss;
+        oss << std::put_time(&result, format.data());
+        return std::move(oss.str());
+    }
+
+    std::string Time(std::string_view format = "%H:%M:%S")
+    {
+        return std::move(Date(format));
+    }
 }
 
 #pragma endregion
