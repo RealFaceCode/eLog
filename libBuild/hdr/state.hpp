@@ -73,5 +73,5 @@ namespace elog
 
     void Init();
     void SetState(enums::StateFlag flags);
-    bool ToggleState(enums::StateFlag flag);
+    void ToggleState(enums::StateFlag flag);
 }

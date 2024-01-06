@@ -46,6 +46,11 @@ namespace elog
             auto state = internal::GetState().get();
             return state->flags & static_cast<unsigned int>(flag);
         }
+
+        bool CheckFlagToEnum(enums::StateFlag flag, enums::StateFlag check)
+        {
+            return static_cast<unsigned int>(flag) & static_cast<unsigned int>(check);
+        }
     }
 
     void Init()
@@ -65,12 +70,33 @@ namespace elog
         auto& state = *internal::GetState().get();
         state.flags = 0;
         
-        state->flags |= static_cast<unsigned int>(flags);
+        state.flags |= static_cast<unsigned int>(flags);
     }
 
     void ToggleState(enums::StateFlag flag)
     {
-        auto state = internal::GetState().get();
-        state->flags ^= static_cast<unsigned int>(flag);
+        auto& state = *internal::GetState().get();
+
+        if(internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_ON) && internal::IsFlagSet(enums::StateFlag::CLR_ON)
+            || internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_OFF) && internal::IsFlagSet(enums::StateFlag::CLR_OFF))
+            return;
+
+        if(static_cast<unsigned int>(flag) & (static_cast<unsigned int>(enums::StateFlag::RESET)))
+        {
+            state.flags = static_cast<unsigned int>(enums::StateFlag::DEFAULT);
+            return;
+        }
+        else if(internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_ON)
+                && internal::IsFlagSet(enums::StateFlag::CLR_OFF))
+        {
+            state.flags ^= static_cast<unsigned int>(enums::StateFlag::CLR_OFF);
+        }
+        else if(internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_OFF)
+                && internal::IsFlagSet(enums::StateFlag::CLR_ON))
+        {
+            state.flags ^= static_cast<unsigned int>(enums::StateFlag::CLR_ON);
+        }
+
+        state.flags ^= static_cast<unsigned int>(flag);
     }
 }
