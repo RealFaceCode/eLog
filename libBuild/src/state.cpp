@@ -33,11 +33,18 @@ namespace elog
 
     namespace internal
     {
+
         std::shared_ptr<structs::State> GetState()
         {
             if(!structs::state)
                 throw exception::StateExeption("State is not initialized");
             return structs::state;
+        }
+
+        bool IsFlagSet(enums::StateFlag flag)
+        {
+            auto state = internal::GetState().get();
+            return state->flags & static_cast<unsigned int>(flag);
         }
     }
 
@@ -47,18 +54,23 @@ namespace elog
             return;
             
         structs::state = std::make_shared<structs::State>();
+        structs::state->flags = static_cast<unsigned int>(enums::StateFlag::DEFAULT);
+
         internal::SetColorToState();
         internal::SetLogLevels();
     }
 
-    void SetState(enums::StateFlag flag)
+    void SetState(enums::StateFlag flags)
+    {
+        auto& state = *internal::GetState().get();
+        state.flags = 0;
+        
+        state->flags |= static_cast<unsigned int>(flags);
+    }
+
+    void ToggleState(enums::StateFlag flag)
     {
         auto state = internal::GetState().get();
-
-        switch (flag)
-        {
-        default:
-            break;
-        }
+        state->flags ^= static_cast<unsigned int>(flag);
     }
 }
