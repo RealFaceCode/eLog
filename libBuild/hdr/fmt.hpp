@@ -541,8 +541,14 @@ namespace elog::fmt
         FormatString(const std::string& format, const SourceLoc& loc = SourceLoc::current());
         FormatString(std::string_view format, const SourceLoc& loc = SourceLoc::current());
         FormatString(const char* format, const SourceLoc& loc = SourceLoc::current());
+        ~FormatString() = default;
 
-        std::string format = "";
+        //moveconstructor
+        FormatString(FormatString&&) noexcept;
+        //moveassignment
+        FormatString& operator=(FormatString&&) noexcept;
+
+        std::stringbuf format;
         SourceLoc loc;
     };
 
@@ -826,6 +832,7 @@ namespace elog::fmt
     template<typename... Args>
     inline std::string Format(const FormatString& format, Args&& ...args)
     {
+        size numArgs = sizeof...(Args);
         FormatParser formatParser(format);
         FormatPack& formatList = formatParser.getFormatList();
 
@@ -926,12 +933,30 @@ namespace elog::fmt
     {}
 
     inline FormatString::FormatString(std::string_view format, const SourceLoc& loc)
-    : format(format), loc(loc) 
-    {}
+    : loc(loc) 
+    {
+        this->format.sputn(format.data(), format.size());
+    }
 
     inline FormatString::FormatString(const char* format, const SourceLoc& loc)
-    : format(format), loc(loc) 
-    {}
+    : loc(loc) 
+    {
+        this->format.sputn(format, strlen(format));
+    }
+
+    inline FormatString::FormatString(FormatString&& other) noexcept
+    //: format(std::move(other.format)), loc(std::move(other.loc))
+    {
+        format = std::move(other.format);
+        loc = std::move(other.loc);
+    }
+
+    inline FormatString& FormatString::operator=(FormatString&& other) noexcept
+    {
+        format = std::move(other.format);
+        loc = std::move(other.loc);
+        return *this;
+    }
 
     #pragma endregion
 
@@ -1082,7 +1107,7 @@ namespace elog::fmt
 
     inline void FormatParser::parseFormat(const FormatString& format)
     {
-        std::string formatString = format.format;
+        std::string_view formatString = format.format.view();
         std::vector<size> beginPositions = FindAllOf(formatString, "{");
         std::vector<size> endPositions = FindAllOf(formatString, "}");
 
@@ -1514,7 +1539,7 @@ namespace elog::fmt
 
     inline void FormatArgCombiner::combine(const FormatString& formatString, std::vector<Argument>& argList, const FormatPack& formatList)
     {
-        formattedString = formatString.format;
+        formattedString = formatString.format.str();
         const auto& formats = formatList.formats;
         size index = 0;
 
