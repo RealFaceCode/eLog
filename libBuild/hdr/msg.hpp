@@ -49,23 +49,23 @@ namespace elog::structs
         template<typename... Params>
         void setup(Params&&... params) 
         {
-            callback = [params...](std::string_view logLevel, std::string_view label, fmt::FormatString& fmt) -> std::string
+            callback = [params...](std::string_view logLevel, std::string_view label, fmt::FormatString& fmt, bool colorize) -> std::string
             {
-                return std::move(build(logLevel, label, fmt, params...));
+                return std::move(build(logLevel, label, fmt, colorize, params...));
             };
         }
 
-        std::string execute()
+        std::string execute(bool colorize)
         {
-            return std::move(callback(logLevel, label, format));
+            return std::move(callback(logLevel, label, format, colorize));
         }
 
     private:
-        static void FillLogLevel(std::string_view logLevel, std::stringbuf& buf)
+        static void FillLogLevel(std::string_view logLevel, std::stringbuf& buf, bool colorize)
         {
-            bool colorize = internal::IsFlagSet(enums::StateFlag::CLR_ON);
+            bool colorizebool = internal::IsFlagSet(enums::StateFlag::CLR_ON) && colorize;
 
-            if(colorize)
+            if(colorizebool)
             {
                 auto color = internal::GetLogColor(logLevel);
                 if(color.has_value())
@@ -80,7 +80,7 @@ namespace elog::structs
 
             buf.sputn(logLevel.data(), logLevel.size());
 
-            if(colorize)
+            if(colorizebool)
             {
                 const auto& resetColor = internal::GetResetColor();
                 buf.sputn(resetColor.data(), resetColor.size());
@@ -141,12 +141,12 @@ namespace elog::structs
         }
 
         template<typename... Params>
-        static std::string build(std::string_view logLevel, std::string_view label, fmt::FormatString& format, Params&&... params)
+        static std::string build(std::string_view logLevel, std::string_view label, fmt::FormatString& format, bool colorize, Params&&... params)
         {
             std::size_t size = sizeof...(params);
             std::stringbuf buf;
 
-            FillLogLevel(logLevel, buf);
+            FillLogLevel(logLevel, buf, colorize);
             FillTimeDate(buf);
             FillLogInfo(buf, format.loc);
             
@@ -160,6 +160,6 @@ namespace elog::structs
         std::string_view logLevel;
         std::string_view label;
         fmt::FormatString format;
-        std::function<std::string(std::string_view, std::string_view, fmt::FormatString&, Args...)> callback;
+        std::function<std::string(std::string_view, std::string_view, fmt::FormatString&, bool, Args...)> callback;
     };
 }

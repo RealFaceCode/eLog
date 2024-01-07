@@ -58,7 +58,7 @@ namespace elog::internal
             queue.pop();
             lock.unlock();
 
-            auto str = msg.execute();
+            auto str = msg.execute(true);
             std::cout << str << std::endl; //TODO: replace with log
         }
     }
