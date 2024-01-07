@@ -49,10 +49,10 @@ namespace elog::internal
         {
             std::unique_lock lock(GetMutex());
             auto& queue = GetQueue();
-            GetCv().wait(lock, [&queue]{ return !queue.empty() && !IsRunning() || IsWaiting(); });
+            GetCv().wait(lock, [&queue]{ return !queue.empty() && IsRunning() || IsWaiting(); });
             
             if(queue.empty())
-                continue;;
+                continue;
 
             auto msg = std::move(queue.front());
             queue.pop();
