@@ -151,9 +151,7 @@ namespace elog::structs
             FillLogInfo(buf, format.loc);
             
             auto formatView = format.format.view();
-
             buf.sputn(formatView.data(), formatView.size());
-            auto view = buf.str();
             format.format = std::move(buf);
 
             return std::move(fmt::Format(format, params...));
