@@ -18,9 +18,30 @@ namespace elog::structs
         Msg() = default;
         ~Msg() = default;
 
+        //moveconstructor
+        Msg(Msg&& other)
+        //: logLevel(std::move(logLevel)), label(std::move(label)), format(std::move(format)), callback(std::move(callback))
+        {
+            logLevel = std::move(other.logLevel);
+            label = std::move(other.label);
+            format = std::move(other.format);
+            callback = std::move(other.callback);
+        }
+
+        //moveassignment
+        Msg& operator=(Msg&& other)
+        {
+            logLevel = std::move(other.logLevel);
+            label = std::move(other.label);
+            format = std::move(other.format);
+            callback = std::move(other.callback);
+            return *this;
+        }
+
+
         template<typename... Params>
-        Msg(std::string_view logLevel, std::string_view label, const fmt::FormatString& format, Params&&... params)
-        : logLevel(logLevel), label(label), format(format)
+        Msg(std::string_view logLevel, std::string_view label, fmt::FormatString format, Params&&... params)
+        : logLevel(logLevel), label(label), format(std::move(format))
         {
             setup(std::forward<Params>(params)...);
         }
@@ -28,15 +49,15 @@ namespace elog::structs
         template<typename... Params>
         void setup(Params&&... params) 
         {
-            callback = [&fmt = this->format, &ll = this->logLevel, &l = this->label,params...]() -> std::string
+            callback = [params...](std::string_view logLevel, std::string_view label, fmt::FormatString& fmt) -> std::string
             {
-                return std::move(build(ll, l, fmt, params...));
+                return std::move(build(logLevel, label, fmt, params...));
             };
         }
 
         std::string execute()
         {
-            return std::move(callback());
+            return std::move(callback(logLevel, label, format));
         }
 
     private:
@@ -85,7 +106,7 @@ namespace elog::structs
             }
         }
 
-        static void FillLogInfo(std::stringbuf& buf, const SourceLoc& loc)
+        static void FillLogInfo(std::stringbuf& buf, const elog::fmt::SourceLoc& loc)
         {
             if(!internal::IsFlagSet(enums::StateFlag::FMT_FILE) 
             || !internal::IsFlagSet(enums::StateFlag::FMT_FUNCTION) 
@@ -122,15 +143,18 @@ namespace elog::structs
         template<typename... Params>
         static std::string build(std::string_view logLevel, std::string_view label, fmt::FormatString& format, Params&&... params)
         {
-            
+            std::size_t size = sizeof...(params);
             std::stringbuf buf;
 
             FillLogLevel(logLevel, buf);
             FillTimeDate(buf);
             FillLogInfo(buf, format.loc);
             
-            buf.sputn(format.format.data(), format.format.size());
-            format.format = std::move(buf.str());
+            auto formatView = format.format.view();
+
+            buf.sputn(formatView.data(), formatView.size());
+            auto view = buf.str();
+            format.format = std::move(buf);
 
             return std::move(fmt::Format(format, params...));
         }
@@ -138,6 +162,6 @@ namespace elog::structs
         std::string_view logLevel;
         std::string_view label;
         fmt::FormatString format;
-        std::function<std::string(Args...)> callback;
+        std::function<std::string(std::string_view, std::string_view, fmt::FormatString&, Args...)> callback;
     };
 }
