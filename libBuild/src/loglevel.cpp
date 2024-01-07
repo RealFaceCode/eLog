@@ -14,7 +14,7 @@ namespace elog
             state.logLevels["INFO"] = {enums::Color::White, {}};
             state.logLevels["WARNING"] = {enums::Color::Yellow, {}};
             state.logLevels["ERROR"] = {enums::Color::Red, {}};
-            state.logLevels["CRITICAL"] = {enums::Color::Magenta, {}};
+            state.logLevels["FATAL"] = {enums::Color::Magenta, {}};
         }
 
         std::optional<std::reference_wrapper<structs::LogColor>> GetLogColor(std::string_view logLevel)
