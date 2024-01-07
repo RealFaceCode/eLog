@@ -10,6 +10,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <fstream>
 
 namespace elog
 {
@@ -51,8 +52,12 @@ namespace elog
             LOG_THREAD_WAIT = 1 << 7,
             CLR_ON = 1 << 8,
             CLR_OFF = 1 << 9,
+            OUT_TERMINAL = 1 << 10,
+            OUT_FILE = 1 << 11,
+            OUT_BUFFER = 1 << 12,
+            OUT_NETWORK = 1 << 13,
 
-            DEFAULT = FMT_TIME | FMT_DATE | FMT_FUNCTION | FMT_FILE | FMT_LINE | LOG_NORMAL | CLR_ON,
+            DEFAULT = OUT_TERMINAL | FMT_TIME | FMT_DATE | FMT_FUNCTION | FMT_FILE | FMT_LINE | LOG_NORMAL | CLR_ON,
         };
 
         enum class Color;
@@ -71,6 +76,7 @@ namespace elog
             std::unordered_map<enums::Color, std::string> logColors;
             std::unordered_map<enums::Effect, std::string> logEffects;
             std::queue<Msg<>> msgQueue;
+            std::vector<std::stringbuf> logBuffer;
             unsigned int flags;
             std::string resetColor;
             std::string timeFormat;
@@ -80,6 +86,8 @@ namespace elog
             std::jthread queueThread;
             bool queueThreadRunning;
             bool isWaitingToClose;
+            std::ofstream logFile;
+            std::string logFilePath;
         };
     }
 

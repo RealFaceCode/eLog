@@ -84,6 +84,7 @@ namespace elog
         structs::state->dateFormat = "%Y-%m-%d";
         structs::state->queueThreadRunning = false;
         structs::state->isWaitingToClose = false;
+        structs::state->logFilePath = "log.txt";
 
         internal::SetColorToState();
         internal::SetLogLevels();
