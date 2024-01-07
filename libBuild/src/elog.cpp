@@ -22,6 +22,7 @@ namespace elog
             std::string outf;
 
             if(IsFlagSet(enums::StateFlag::OUT_TERMINAL) || IsFlagSet(enums::StateFlag::OUT_BUFFER))
+                outc = msg.execute(true);
 
             if(IsFlagSet(enums::StateFlag::OUT_FILE))
                 outf = msg.execute(false);
