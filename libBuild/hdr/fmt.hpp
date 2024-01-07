@@ -830,7 +830,7 @@ namespace elog::fmt
     #pragma region Format
 
     template<typename... Args>
-    inline std::string Format(const FormatString& format, Args&& ...args)
+    inline std::string Format(std::string_view format, Args&& ...args)
     {
         size numArgs = sizeof...(Args);
         FormatParser formatParser(format);
