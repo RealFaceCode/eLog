@@ -3,10 +3,10 @@
 #include "logcolor.hpp"
 #include "loglevel.hpp"
 #include "msg.hpp"
+#include "thread.hpp"
 
 namespace elog
 {
-
     namespace exception
     {
         StateExeption::StateExeption(const char* msg)
@@ -97,14 +97,21 @@ namespace elog
         state.flags |= static_cast<unsigned int>(flags);
     }
 
+    bool CheckUp(enums::StateFlag flag)
+    {
+        return (internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_ON) && internal::IsFlagSet(enums::StateFlag::CLR_ON)
+            || internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_OFF) && internal::IsFlagSet(enums::StateFlag::CLR_OFF)) 
+            || (internal::CheckFlagToEnum(flag, enums::StateFlag::LOG_THREAD) && internal::IsFlagSet(enums::StateFlag::LOG_THREAD)
+            || internal::CheckFlagToEnum(flag, enums::StateFlag::LOG_NORMAL) && internal::IsFlagSet(enums::StateFlag::LOG_NORMAL));
+    }
+
     void ToggleState(enums::StateFlag flag)
     {
         auto& state = *internal::GetState().get();
 
-        if(internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_ON) && internal::IsFlagSet(enums::StateFlag::CLR_ON)
-            || internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_OFF) && internal::IsFlagSet(enums::StateFlag::CLR_OFF))
+        if(CheckUp(flag))
             return;
-
+        
         if(static_cast<unsigned int>(flag) & (static_cast<unsigned int>(enums::StateFlag::RESET)))
         {
             state.flags = static_cast<unsigned int>(enums::StateFlag::DEFAULT);
@@ -112,13 +119,21 @@ namespace elog
         }
         else if(internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_ON)
                 && internal::IsFlagSet(enums::StateFlag::CLR_OFF))
-        {
             state.flags ^= static_cast<unsigned int>(enums::StateFlag::CLR_OFF);
-        }
         else if(internal::CheckFlagToEnum(flag, enums::StateFlag::CLR_OFF)
                 && internal::IsFlagSet(enums::StateFlag::CLR_ON))
-        {
             state.flags ^= static_cast<unsigned int>(enums::StateFlag::CLR_ON);
+        else if(internal::CheckFlagToEnum(flag, enums::StateFlag::LOG_THREAD)
+                && internal::IsFlagSet(enums::StateFlag::LOG_NORMAL))
+        {
+            state.flags ^= static_cast<unsigned int>(enums::StateFlag::LOG_NORMAL);
+            internal::StartThread();
+        }
+        else if(internal::CheckFlagToEnum(flag, enums::StateFlag::LOG_NORMAL)
+                && internal::IsFlagSet(enums::StateFlag::LOG_THREAD))
+        {
+            state.flags ^= static_cast<unsigned int>(enums::StateFlag::LOG_THREAD);
+            internal::StopThread();
         }
 
         state.flags ^= static_cast<unsigned int>(flag);

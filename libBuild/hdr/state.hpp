@@ -48,8 +48,9 @@ namespace elog
             FMT_LINE = 1 << 4,
             LOG_NORMAL = 1 << 5,
             LOG_THREAD = 1 << 6,
-            CLR_ON = 1 << 7,
-            CLR_OFF = 1 << 8,
+            LOG_THREAD_WAIT = 1 << 7,
+            CLR_ON = 1 << 8,
+            CLR_OFF = 1 << 9,
 
             DEFAULT = FMT_TIME | FMT_DATE | FMT_FUNCTION | FMT_FILE | FMT_LINE | LOG_NORMAL | CLR_ON,
         };
