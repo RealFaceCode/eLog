@@ -2,6 +2,7 @@
 
 #include "logcolor.hpp"
 #include "loglevel.hpp"
+#include "msg.hpp"
 
 namespace elog
 {
@@ -81,6 +82,8 @@ namespace elog
         structs::state->resetColor = "\033[0m";
         structs::state->timeFormat = "%H:%M:%S";
         structs::state->dateFormat = "%Y-%m-%d";
+        structs::state->queueThreadRunning = false;
+        structs::state->isWaitingToClose = false;
 
         internal::SetColorToState();
         internal::SetLogLevels();

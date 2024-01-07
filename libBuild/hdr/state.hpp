@@ -6,6 +6,10 @@
 #include <unordered_map>
 #include <string_view>
 #include <queue>
+#include <exception>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 namespace elog
 {
@@ -57,6 +61,8 @@ namespace elog
     namespace structs
     {
         struct LogColor;
+        template<typename ...Args>
+        struct Msg;
 
         struct State
         {
@@ -68,6 +74,11 @@ namespace elog
             std::string resetColor;
             std::string timeFormat;
             std::string dateFormat;
+            std::mutex queueMutex;
+            std::condition_variable queueCv;
+            std::jthread queueThread;
+            bool queueThreadRunning;
+            bool isWaitingToClose;
         };
     }
 
