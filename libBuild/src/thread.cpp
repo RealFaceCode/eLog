@@ -4,6 +4,7 @@
 
 #include "state.hpp"
 #include "msg.hpp"
+#include "elog.hpp"
 
 namespace elog::internal
 {
@@ -58,8 +59,7 @@ namespace elog::internal
             queue.pop();
             lock.unlock();
 
-            auto str = msg.execute(true);
-            std::cout << str << std::endl; //TODO: replace with log
+            internal::logOut(std::move(msg));
         }
     }
 
