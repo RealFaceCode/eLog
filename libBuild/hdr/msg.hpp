@@ -152,9 +152,8 @@ namespace elog::structs
             
             auto formatView = format.format.view();
             buf.sputn(formatView.data(), formatView.size());
-            format.format = std::move(buf);
 
-            return std::move(fmt::Format(format, params...));
+            return std::move(fmt::Format(buf.view(), params...));
         }
 
         std::string_view logLevel;
