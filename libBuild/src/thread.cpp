@@ -5,92 +5,89 @@
 #include "state.hpp"
 #include "msg.hpp"
 
-namespace elog
+namespace elog::internal
 {
-    namespace internal
+    std::condition_variable& GetCv()
     {
-        std::condition_variable& GetCv()
-        {
-            auto& state = *internal::GetState();
-            return state.queueCv;
-        }
+        auto& state = *internal::GetState();
+        return state.queueCv;
+    }
 
-        std::mutex& GetMutex()
-        {
-            auto& state = *internal::GetState();
-            return state.queueMutex;
-        }
+    std::mutex& GetMutex()
+    {
+        auto& state = *internal::GetState();
+        return state.queueMutex;
+    }
 
-        std::jthread& GetThread()
-        {
-            auto& state = *internal::GetState();
-            return state.queueThread;
-        }
+    std::jthread& GetThread()
+    {
+        auto& state = *internal::GetState();
+        return state.queueThread;
+    }
 
-        bool& GetIsRunning()
-        {
-            auto& state = *internal::GetState();
-            return state.queueThreadRunning;
-        }
+    bool& IsRunning()
+    {
+        auto& state = *internal::GetState();
+        return state.queueThreadRunning;
+    }
 
-        bool& GetIsWaiting()
-        {
-            auto& state = *internal::GetState();
-            return state.isWaitingToClose;
-        }
+    bool& IsWaiting()
+    {
+        auto& state = *internal::GetState();
+        return state.isWaitingToClose;
+    }
 
-        std::queue<structs::Msg<>>& GetQueue()
-        {
-            auto& state = *internal::GetState();
-            return state.msgQueue;
-        }
+    std::queue<structs::Msg<>>& GetQueue()
+    {
+        auto& state = *internal::GetState();
+        return state.msgQueue;
+    }
 
-        void Worker(std::stop_token stopToken)
-        {
-            while(!stopToken.stop_requested())
-            {
-                std::unique_lock lock(GetMutex());
-                auto& queue = GetQueue();
-                GetCv().wait(lock, [&queue]{ return !queue.empty() && !GetIsRunning() || GetIsWaiting(); });
-
-                if(queue.empty())
-                    continue;;
-
-                auto msg = std::move(queue.front());
-                queue.pop();
-                lock.unlock();
-
-                auto str = msg.execute();
-                std::cout << str << std::endl; //TODO: replace with log
-            }
-        }
-
-        void AddTask(structs::Msg<>&& msg)
+    void Worker(std::stop_token stopToken)
+    {
+        while(!stopToken.stop_requested())
         {
             std::unique_lock lock(GetMutex());
-            auto& state = *internal::GetState();
-            state.msgQueue.push(std::move(msg));
-            internal::GetCv().notify_one();
+            auto& queue = GetQueue();
+            GetCv().wait(lock, [&queue]{ return !queue.empty() && !IsRunning() || IsWaiting(); });
+            
+            if(queue.empty())
+                continue;;
+
+            auto msg = std::move(queue.front());
+            queue.pop();
+            lock.unlock();
+
+            auto str = msg.execute();
+            std::cout << str << std::endl; //TODO: replace with log
         }
+    }
+
+    void AddTask(structs::Msg<>&& msg)
+    {
+        std::unique_lock lock(GetMutex());
+        auto& state = *internal::GetState();
+        state.msgQueue.push(std::move(msg));
+        internal::GetCv().notify_one();
     }
 
     void StartThread()
     {
-        if(internal::GetIsRunning())
+        if(internal::IsRunning())
             return;
-            
+
         auto& state = *internal::GetState();
         state.queueThreadRunning = true;
         state.queueThread = std::jthread(internal::Worker);
     }
 
-    void StopThread(bool wait)
+    void StopThread()
     {
-        if(!internal::GetIsRunning())
+        if(!internal::IsRunning())
             return;
-        auto& state = *internal::GetState();
 
-        if(wait)
+        auto& state = *internal::GetState();
+        if(internal::IsFlagSet(enums::StateFlag::LOG_THREAD_WAIT))
         {
             state.isWaitingToClose = true;
             while(!state.msgQueue.empty())
@@ -103,4 +100,5 @@ namespace elog
         internal::GetThread().join();
         state.isWaitingToClose = false;
     }
+
 }
