@@ -30,24 +30,25 @@
 #pragma endregion
 
 #pragma region Typedefs
+namespace elog::fmt
+{
+    using u8 = uint8_t;
+    using u16 = uint16_t;
+    using u32 = uint32_t;
+    using u64 = uint64_t;
 
-using u8 = uint8_t;
-using u16 = uint16_t;
-using u32 = uint32_t;
-using u64 = uint64_t;
+    using i8 = int8_t;
+    using i16 = int16_t;
+    using i32 = int32_t;
+    using i64 = int64_t;
 
-using i8 = int8_t;
-using i16 = int16_t;
-using i32 = int32_t;
-using i64 = int64_t;
+    using f32 = float;
+    using f64 = double;
 
-using f32 = float;
-using f64 = double;
+    using size = size_t;
 
-using size = size_t;
-
-using SourceLoc = std::source_location;
-
+    using SourceLoc = std::source_location;
+}
 template <typename T>
 using not_ref_type = std::remove_reference_t<T>;
 
@@ -695,7 +696,7 @@ namespace elog::fmt
 {
     #pragma region FormatAlignmentToString && FormatSpecifierToString
 
-    std::string FormatAlignmentToString(FormatAlignment alignment)
+    inline std::string FormatAlignmentToString(FormatAlignment alignment)
     {
         switch (alignment)
         {
@@ -713,7 +714,7 @@ namespace elog::fmt
         }
     }
 
-    std::string FormatSpecifierToString(FormatSpecifier specifier)
+    inline std::string FormatSpecifierToString(FormatSpecifier specifier)
     {
         switch (specifier)
         {
@@ -775,7 +776,7 @@ namespace elog::fmt
 
     #pragma region Helper
 
-    std::vector<size> FindAllOf(const std::string_view& str, const std::string_view& substr)
+    inline std::vector<size> FindAllOf(const std::string_view& str, const std::string_view& substr)
     {
         std::vector<size> positions;
         size pos = str.find(substr, 0);
@@ -789,7 +790,7 @@ namespace elog::fmt
         return positions;
     }
 
-    size FindNextNonNumerical(const std::string_view& str, size pos)
+    inline size FindNextNonNumerical(const std::string_view& str, size pos)
     {
         size i = pos;
         while (i < str.size())
@@ -804,7 +805,7 @@ namespace elog::fmt
         return std::string::npos;
     }
 
-    void PrintFormatList(const FormatPack& formatList)
+    inline void PrintFormatList(const FormatPack& formatList)
     {
         for (const auto& format : formatList.formats)
         {
@@ -823,7 +824,7 @@ namespace elog::fmt
     #pragma region Format
 
     template<typename... Args>
-    std::string Format(const FormatString& format, Args&& ...args)
+    inline std::string Format(const FormatString& format, Args&& ...args)
     {
         FormatParser formatParser(format);
         FormatPack& formatList = formatParser.getFormatList();
@@ -843,7 +844,7 @@ namespace elog::fmt
 
     #pragma region Date && Time
 
-    std::string Date(std::string_view format = "%Y-%m-%d")
+    inline std::string Date(std::string_view format = "%Y-%m-%d")
     {
         auto currentTime = std::chrono::system_clock::now();
         auto localTime = std::chrono::system_clock::to_time_t(currentTime);
@@ -860,10 +861,12 @@ namespace elog::fmt
         return std::move(oss.str());
     }
 
-    std::string Time(std::string_view format = "%H:%M:%S")
+    inline std::string Time(std::string_view format = "%H:%M:%S")
     {
         return std::move(Date(format));
     }
+
+    #pragma endregion
 }
 
 #pragma endregion
@@ -874,32 +877,32 @@ namespace elog::fmt
 {
     #pragma region Helper
 
-    size StringHasher::operator()(const std::string& key) const
+    inline size StringHasher::operator()(const std::string& key) const
     {
         return std::hash<std::string>{}(key);
     }
 
-    size StringHasher::operator()(const char* key) const
+    inline size StringHasher::operator()(const char* key) const
     {
         return std::hash<std::string_view>{}(key);
     }
 
-    bool StringEqual::operator()(std::string_view lhs, std::string_view rhs) const
+    inline bool StringEqual::operator()(std::string_view lhs, std::string_view rhs) const
     {
         return lhs == rhs;
     }
 
-    bool StringEqual::operator()(std::string_view lhs, const char* rhs) const
+    inline bool StringEqual::operator()(std::string_view lhs, const char* rhs) const
     {
         return lhs == rhs;
     }
 
-    bool StringEqual::operator()(const char* lhs, std::string_view rhs) const
+    inline bool StringEqual::operator()(const char* lhs, std::string_view rhs) const
     {
         return lhs == rhs;
     }
 
-    bool StringEqual::operator()(const char* lhs, const char* rhs) const
+    inline bool StringEqual::operator()(const char* lhs, const char* rhs) const
     {
         return lhs == rhs;
     }
@@ -908,7 +911,7 @@ namespace elog::fmt
 
     #pragma region Argument
 
-    void Argument::setArgumentType(ArgumentType type)
+    inline void Argument::setArgumentType(ArgumentType type)
     {
         if(this->type == ArgumentType::None)
             this->type = type;
@@ -918,15 +921,15 @@ namespace elog::fmt
 
     #pragma region FormatString
 
-    FormatString::FormatString(const std::string& format, const SourceLoc& loc)
+    inline FormatString::FormatString(const std::string& format, const SourceLoc& loc)
     : format(format), loc(loc) 
     {}
 
-    FormatString::FormatString(std::string_view format, const SourceLoc& loc)
+    inline FormatString::FormatString(std::string_view format, const SourceLoc& loc)
     : format(format), loc(loc) 
     {}
 
-    FormatString::FormatString(const char* format, const SourceLoc& loc)
+    inline FormatString::FormatString(const char* format, const SourceLoc& loc)
     : format(format), loc(loc) 
     {}
 
@@ -935,18 +938,18 @@ namespace elog::fmt
     #pragma region ArgParser
 
     template<typename... Args>
-    ArgParser::ArgParser(Args&& ...args)
+    inline ArgParser::ArgParser(Args&& ...args)
     {
         parseArgs(args...);
     }
 
-    std::vector<Argument>& ArgParser::getArgList()
+    inline std::vector<Argument>& ArgParser::getArgList()
     {
         return mArguments;
     }
 
     template <typename Arg>
-    void ArgParser::argToString(std::stringbuf& buf, Argument& argument, Arg& arg)
+    inline void ArgParser::argToString(std::stringbuf& buf, Argument& argument, Arg& arg)
     {
         std::stringstream ss;
         if constexpr (is_string_type_v<not_ref_type<Arg>>)
@@ -1040,7 +1043,7 @@ namespace elog::fmt
     }
 
     template<typename Arg>
-    void ArgParser::parseArg(Arg& arg)
+    inline void ArgParser::parseArg(Arg& arg)
     {
         Argument argument;
         std::stringbuf buf;
@@ -1052,7 +1055,7 @@ namespace elog::fmt
     }
 
     template<typename... Args>
-    void ArgParser::parseArgs(Args&& ...args)
+    inline void ArgParser::parseArgs(Args&& ...args)
     {
         size numArgs = sizeof...(Args);
         if(numArgs == 0)
@@ -1067,17 +1070,17 @@ namespace elog::fmt
 
     #pragma region FormatParser
 
-    FormatParser::FormatParser(const FormatString& format)
+    inline FormatParser::FormatParser(const FormatString& format)
     {
         parseFormat(format);
     }
 
-    FormatPack& FormatParser::getFormatList()
+    inline FormatPack& FormatParser::getFormatList()
     {
         return mFormatStrings;
     }
 
-    void FormatParser::parseFormat(const FormatString& format)
+    inline void FormatParser::parseFormat(const FormatString& format)
     {
         std::string formatString = format.format;
         std::vector<size> beginPositions = FindAllOf(formatString, "{");
@@ -1103,12 +1106,12 @@ namespace elog::fmt
 
     #pragma region FormatInterpreter
 
-    FormatInterpreter::FormatInterpreter(FormatPack& formatList)
+    inline FormatInterpreter::FormatInterpreter(FormatPack& formatList)
     {
         interpret(formatList);
     }
 
-    void FormatInterpreter::interpret(FormatPack& formatList) const
+    inline void FormatInterpreter::interpret(FormatPack& formatList) const
     {
         std::set<size> indexSet;
 
@@ -1129,12 +1132,12 @@ namespace elog::fmt
         }
     }
 
-    void FormatInterpreter::hasSpecifier(FormatType& formatString) const
+    inline void FormatInterpreter::hasSpecifier(FormatType& formatString) const
     {
         formatString.hasSpecifier = formatString.format.find(":") != std::string::npos;
     }
 
-    void FormatInterpreter::hasPrecision(FormatType& formatString) const
+    inline void FormatInterpreter::hasPrecision(FormatType& formatString) const
     {
         size pos = formatString.format.find(".");
         size posEnd = FindNextNonNumerical(formatString.format, pos + 1);
@@ -1146,7 +1149,7 @@ namespace elog::fmt
         }
     }
 
-    void FormatInterpreter::hasAlignment(FormatType& formatString) const
+    inline void FormatInterpreter::hasAlignment(FormatType& formatString) const
     {
         static const std::unordered_map<std::string, FormatAlignment, StringHasher, StringEqual> alignmentSet =
         {
@@ -1168,7 +1171,7 @@ namespace elog::fmt
         }
     }
 
-    void FormatInterpreter::hasIndex(FormatType& formatString) const
+    inline void FormatInterpreter::hasIndex(FormatType& formatString) const
     {
         bool hasNumber = std::ranges::any_of(formatString.format, ::isdigit);
         if(hasNumber && std::isdigit(formatString.format[1]))
@@ -1178,7 +1181,7 @@ namespace elog::fmt
         }
     }
 
-    void FormatInterpreter::hasFormat(FormatType& formatString) const
+    inline void FormatInterpreter::hasFormat(FormatType& formatString) const
     {
         static const std::unordered_map<char, FormatSpecifier> formatMap =
         {
@@ -1222,20 +1225,20 @@ namespace elog::fmt
 
     #pragma region FormatArgCheckAndFormer
 
-    FormatArgCheck::FormatArgCheck(const FormatString& fmt, std::vector<Argument>& argList, const FormatPack& formatList)
+    inline FormatArgCheck::FormatArgCheck(const FormatString& fmt, std::vector<Argument>& argList, const FormatPack& formatList)
     : mArgList(argList), mFormatList(formatList)
     {
         check(fmt);
     }
 
-    void FormatArgCheck::checkArgCount(const FormatString& fmt) const
+    inline void FormatArgCheck::checkArgCount(const FormatString& fmt) const
     {
         if(mFormatList.count > mArgList.size())
             throw ArgumentException(Format("Too few arguments passed to format string:\n\t[{}]\nExpected [{}] arguments but got [{}] arguments",
                                             fmt.format,  mArgList.size(), mFormatList.formats.size()));
     }
 
-    void FormatArgCheck::checkIndex()
+    inline void FormatArgCheck::checkIndex()
     {
         allTrue = std::ranges::all_of(mFormatList.formats, [](const FormatType& val) { return val.index.first; });
         allFalse = std::ranges::all_of(mFormatList.formats, [](const FormatType& val) { return !val.index.first; });
@@ -1243,7 +1246,7 @@ namespace elog::fmt
             throw ArgumentException("Either all or none of the format strings must have an index");
     }
 
-    void FormatArgCheck::checkSpecifierSwitch(FormatSpecifier formatSpecifier, ArgumentType argType, size index) const
+    inline void FormatArgCheck::checkSpecifierSwitch(FormatSpecifier formatSpecifier, ArgumentType argType, size index) const
     {
         switch (formatSpecifier)
             {
@@ -1302,7 +1305,7 @@ namespace elog::fmt
             }
     }
 
-    void FormatArgCheck::checkSpecifier() const
+    inline void FormatArgCheck::checkSpecifier() const
     {
         std::set<size> usedIndexes;
         size index = 0;
@@ -1330,7 +1333,7 @@ namespace elog::fmt
         }
     }
 
-    void FormatArgCheck::check(const FormatString& fmt)
+    inline void FormatArgCheck::check(const FormatString& fmt)
     {
         checkArgCount(fmt);
         checkIndex();
@@ -1341,12 +1344,12 @@ namespace elog::fmt
 
     #pragma region FormatArgCombiner
 
-    FormatArgCombiner::FormatArgCombiner(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList)
+    inline FormatArgCombiner::FormatArgCombiner(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList)
     {
         combine(format, argList, formatList);
     }
 
-    void FormatArgCombiner::precision(Argument& arg, const FormatType& format) const
+    inline void FormatArgCombiner::precision(Argument& arg, const FormatType& format) const
     {
         if(format.precision.first)
         {
@@ -1385,7 +1388,7 @@ namespace elog::fmt
         }
     }
 
-    void FormatArgCombiner::alignment(Argument& arg, const FormatType& format) const
+    inline void FormatArgCombiner::alignment(Argument& arg, const FormatType& format) const
     {
         if(format.alignment.first)
         {
@@ -1420,7 +1423,7 @@ namespace elog::fmt
         }
     }
 
-    void FormatArgCombiner::reform(Argument& arg, const FormatType& format) const
+    inline void FormatArgCombiner::reform(Argument& arg, const FormatType& format) const
     {
         if(format.specifier.first)
         {
@@ -1509,7 +1512,7 @@ namespace elog::fmt
         alignment(arg, format);
     }
 
-    void FormatArgCombiner::combine(const FormatString& formatString, std::vector<Argument>& argList, const FormatPack& formatList)
+    inline void FormatArgCombiner::combine(const FormatString& formatString, std::vector<Argument>& argList, const FormatPack& formatList)
     {
         formattedString = formatString.format;
         const auto& formats = formatList.formats;
@@ -1533,7 +1536,7 @@ namespace elog::fmt
         }
     }
 
-    std::string& FormatArgCombiner::getFormattedString()
+    inline std::string& FormatArgCombiner::getFormattedString()
     {
         return formattedString;
     }
