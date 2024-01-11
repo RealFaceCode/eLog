@@ -6,6 +6,7 @@
 #include "state.hpp"
 #include "thread.hpp"
 #include "msg.hpp"
+#include "stringliteral.hpp"
 
 namespace elog
 {
@@ -28,39 +29,81 @@ namespace elog
             internal::logOut(std::move(msg));
     }
 
-    template<typename... Params>
-    inline void Trace(std::string_view label, fmt::FormatString format, Params&&... params)
+    template<structs::StringLiteral lit, typename... Params>
+    inline void Trace(fmt::FormatString format, Params&&... params)
     {
+        auto constexpr label = lit.value;
         LogCustom("TRACE", label, std::move(format), std::forward<Params>(params)...);
     }
 
-    template<typename... Params>
-    inline void Debug(std::string_view label, fmt::FormatString format, Params&&... params)
+    template<structs::StringLiteral lit, typename... Params>
+    inline void Debug(fmt::FormatString format, Params&&... params)
     {
-        LogCustom("DEBUG", label, std::move(format), std::forward<Params>(params)...);
+        auto constexpr label = lit.value;
+        LogCustom("DEBUG", "", std::move(format), std::forward<Params>(params)...);
     }
 
-    template<typename... Params>
-    inline void Info(std::string_view label, fmt::FormatString format, Params&&... params)
+    template<structs::StringLiteral lit, typename... Params>
+    inline void Info(fmt::FormatString format, Params&&... params)
     {
+        auto constexpr label = lit.value;
         LogCustom("INFO", label, std::move(format), std::forward<Params>(params)...);
     }
 
-    template<typename... Params>
-    inline void Warn(std::string_view label, fmt::FormatString format, Params&&... params)
+    template<structs::StringLiteral lit, typename... Params>
+    inline void Warning(fmt::FormatString format, Params&&... params)
     {
+        auto constexpr label = lit.value;
         LogCustom("WARNING", label, std::move(format), std::forward<Params>(params)...);
     }
 
-    template<typename... Params>
-    inline void Error(std::string_view label, fmt::FormatString format, Params&&... params)
+    template<structs::StringLiteral lit, typename... Params>
+    inline void Error(fmt::FormatString format, Params&&... params)
     {
+        auto constexpr label = lit.value;
         LogCustom("ERROR", label, std::move(format), std::forward<Params>(params)...);
     }
 
-    template<typename... Params>
-    inline void Fatal(std::string_view label, fmt::FormatString format, Params&&... params)
+    template<structs::StringLiteral lit, typename... Params>
+    inline void Fatal(fmt::FormatString format, Params&&... params)
     {
+        auto constexpr label = lit.value;
         LogCustom("FATAL", label, std::move(format), std::forward<Params>(params)...);
+    }
+
+    template<typename... Params>
+    inline void Trace(fmt::FormatString format, Params&&... params)
+    {
+        LogCustom("TRACE", "", std::move(format), std::forward<Params>(params)...);
+    }
+
+    template<typename... Params>
+    inline void Debug(fmt::FormatString format, Params&&... params)
+    {
+        LogCustom("DEBUG", "", std::move(format), std::forward<Params>(params)...);
+    }
+
+    template<typename... Params>
+    inline void Info(fmt::FormatString format, Params&&... params)
+    {
+        LogCustom("INFO", "", std::move(format), std::forward<Params>(params)...);
+    }
+
+    template<typename... Params>
+    inline void Warning(fmt::FormatString format, Params&&... params)
+    {
+        LogCustom("WARNING", "", std::move(format), std::forward<Params>(params)...);
+    }
+
+    template<typename... Params>
+    inline void Error(fmt::FormatString format, Params&&... params)
+    {
+        LogCustom("ERROR", "", std::move(format), std::forward<Params>(params)...);
+    }
+
+    template<typename... Params>
+    inline void Fatal(fmt::FormatString format, Params&&... params)
+    {
+        LogCustom("FATAL", "", std::move(format), std::forward<Params>(params)...);
     }
 }
