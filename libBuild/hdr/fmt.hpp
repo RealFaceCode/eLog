@@ -1471,7 +1471,33 @@ namespace elog::fmt
                 ss << std::oct << std::stoll(arg.value.view().data());
                 break;
             case FormatSpecifier::binary:
-                ss << std::bitset<sizeof(long long) * 8>(std::stoll(arg.value.view().data()));
+                switch(arg.type)
+                {
+                using enum ArgumentType;
+                case None:
+                    break;
+                case String:
+                    break;
+                case Int:
+                    ss << std::bitset<sizeof(long long) * 8>(std::stoll(arg.value.view().data()));
+                    break;
+                case Float:
+                    ss << std::bitset<sizeof(float) * 8>(std::stof(arg.value.view().data()));
+                    break;
+                case Double:
+                    ss << std::bitset<sizeof(double) * 8>(std::stod(arg.value.view().data()));
+                    break;
+                case Char:
+                    break;
+                case Bool:
+                    break;
+                case Pointer:
+                    break;
+                case Container:
+                    break;
+                default:
+                    break;
+                }
                 break;
             case FormatSpecifier::scientific:
                 ss << std::scientific << std::stof(arg.value.view().data());
