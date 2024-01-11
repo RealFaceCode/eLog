@@ -47,17 +47,18 @@ namespace elog
             FMT_FUNCTION = 1 << 2,
             FMT_FILE = 1 << 3,
             FMT_LINE = 1 << 4,
-            LOG_NORMAL = 1 << 5,
-            LOG_THREAD = 1 << 6,
-            LOG_THREAD_WAIT = 1 << 7,
-            CLR_ON = 1 << 8,
-            CLR_OFF = 1 << 9,
-            OUT_TERMINAL = 1 << 10,
-            OUT_FILE = 1 << 11,
-            OUT_BUFFER = 1 << 12,
-            OUT_NETWORK = 1 << 13,
+            FMT_LABEL = 1 << 5,
+            LOG_NORMAL = 1 << 6,
+            LOG_THREAD = 1 << 7,
+            LOG_THREAD_WAIT = 1 << 8,
+            CLR_ON = 1 << 9,
+            CLR_OFF = 1 << 10,
+            OUT_TERMINAL = 1 << 11,
+            OUT_FILE = 1 << 12,
+            OUT_BUFFER = 1 << 13,
+            OUT_NETWORK = 1 << 14,
 
-            DEFAULT = OUT_TERMINAL | FMT_TIME | FMT_DATE | FMT_FUNCTION | FMT_FILE | FMT_LINE | LOG_NORMAL | CLR_ON,
+            DEFAULT = FMT_TIME | FMT_DATE | FMT_FUNCTION | FMT_FILE | FMT_LINE | FMT_LABEL | LOG_NORMAL | CLR_ON | OUT_TERMINAL,
         };
 
         enum class Color;
