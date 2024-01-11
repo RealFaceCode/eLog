@@ -89,6 +89,18 @@ namespace elog::structs
             buf.sputn("\t: ", 3);
         }
 
+        static void FillLabel(std::string_view label, std::stringbuf& buf)
+        {
+            if(label.empty())
+                return;
+                
+            if(internal::IsFlagSet(enums::StateFlag::FMT_LABEL))
+            {
+                buf.sputn(label.data(), label.size());
+                buf.sputc('\t');
+            }
+        }
+
         static void FillTimeDate(std::stringbuf& buf)
         {
             if(internal::IsFlagSet(enums::StateFlag::FMT_DATE))
@@ -147,6 +159,7 @@ namespace elog::structs
             std::stringbuf buf;
 
             FillLogLevel(logLevel, buf, colorize);
+            FillLabel(label, buf);
             FillTimeDate(buf);
             FillLogInfo(buf, format.loc);
             
