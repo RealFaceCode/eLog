@@ -34,60 +34,60 @@ namespace elog::fmt
     void FormatArgCheck::checkSpecifierSwitch(FormatSpecifier formatSpecifier, ArgumentType argType, size_t index) const
     {
         switch (formatSpecifier)
-            {
-            using enum FormatSpecifier;
-            case None:
-                break;
-            case FormatSpecifier::decimal:
-                if(argType != ArgumentType::Int)
-                    throw ArgumentException(Format("Argument [{}] is not of type [Int]", index));
-                break;
-            case FormatSpecifier::hexadecimal:
-            case FormatSpecifier::Hexadecimal:
-            case FormatSpecifier::octal:
-            case FormatSpecifier::binary:
-            case FormatSpecifier::scientific:
-            case FormatSpecifier::Scientific:
-                if(argType == ArgumentType::Container)
-                    throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
-                break;
-            case FormatSpecifier::floating:
-                if(argType != ArgumentType::Float && argType != ArgumentType::Double)
-                    throw ArgumentException(Format("Argument [{}] is a [Floating] type", index));
-                break;
-            case FormatSpecifier::general:
-            case FormatSpecifier::General:
-                if(argType == ArgumentType::Container)
-                    throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
-                break;
-            case FormatSpecifier::localized:
-                break;
-            case FormatSpecifier::string:
-                if(argType != ArgumentType::String)
-                    throw ArgumentException(Format("Argument [{}] is not of type [String]", index));
-                break;
-            case FormatSpecifier::character:
-                if(argType != ArgumentType::Char)
-                    throw ArgumentException(Format("Argument [{}] is not of type [Char]", index));
-                break;
-            case FormatSpecifier::year:
-            case FormatSpecifier::month:
-            case FormatSpecifier::day:
-            case FormatSpecifier::hour:
-            case FormatSpecifier::minute:
-            case FormatSpecifier::second:
-            case FormatSpecifier::day_of_year:
-                if(argType != ArgumentType::Int)
-                    throw ArgumentException(Format("Argument [{}] is not of type [Int]", index));
-                break;
-            case FormatSpecifier::weekday:
-            case FormatSpecifier::Weekday:
-                if(argType != ArgumentType::String)
-                    throw ArgumentException(Format("Argument [{}] is not of type [String]", index));
-                break;
-            default:
-                break;
-            }
+        {
+        using enum FormatSpecifier;
+        case None:
+            break;
+        case FormatSpecifier::decimal:
+            if(argType != ArgumentType::Int)
+                throw ArgumentException(Format("Argument [{}] is not of type [Int]", index));
+            break;
+        case FormatSpecifier::hexadecimal:
+        case FormatSpecifier::Hexadecimal:
+        case FormatSpecifier::octal:
+        case FormatSpecifier::binary:
+        case FormatSpecifier::scientific:
+        case FormatSpecifier::Scientific:
+            if(argType == ArgumentType::Container)
+                throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
+            break;
+        case FormatSpecifier::floating:
+            if(argType != ArgumentType::Float && argType != ArgumentType::Double)
+                throw ArgumentException(Format("Argument [{}] is a [Floating] type", index));
+            break;
+        case FormatSpecifier::general:
+        case FormatSpecifier::General:
+            if(argType == ArgumentType::Container)
+                throw ArgumentException(Format("Argument [{}] is a [Container] type", index));
+            break;
+        case FormatSpecifier::localized:
+            break;
+        case FormatSpecifier::string:
+            if(argType != ArgumentType::String)
+                throw ArgumentException(Format("Argument [{}] is not of type [String]", index));
+            break;
+        case FormatSpecifier::character:
+            if(argType != ArgumentType::Char)
+                throw ArgumentException(Format("Argument [{}] is not of type [Char]", index));
+            break;
+        case FormatSpecifier::year:
+        case FormatSpecifier::month:
+        case FormatSpecifier::day:
+        case FormatSpecifier::hour:
+        case FormatSpecifier::minute:
+        case FormatSpecifier::second:
+        case FormatSpecifier::day_of_year:
+            if(argType != ArgumentType::Int)
+                throw ArgumentException(Format("Argument [{}] is not of type [Int]", index));
+            break;
+        case FormatSpecifier::weekday:
+        case FormatSpecifier::Weekday:
+            if(argType != ArgumentType::String)
+                throw ArgumentException(Format("Argument [{}] is not of type [String]", index));
+            break;
+        default:
+            break;
+        }
     }
 
     void FormatArgCheck::checkSpecifier() const

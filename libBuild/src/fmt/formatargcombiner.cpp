@@ -12,7 +12,6 @@
 
 namespace elog::fmt
 {
-
     char space_out::do_thousands_sep() const
     { 
         return '\'';
