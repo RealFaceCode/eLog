@@ -99,7 +99,7 @@ namespace elog::fmt
             {'f', FormatSpecifier::floating},
             {'g', FormatSpecifier::general},
             {'G', FormatSpecifier::General},
-            {'L', FormatSpecifier::localized},
+            {'n', FormatSpecifier::localized},
             {'s', FormatSpecifier::string},
             {'c', FormatSpecifier::character},
             {'Y', FormatSpecifier::year},
