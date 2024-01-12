@@ -28,5 +28,4 @@ namespace elog::fmt
 
         return std::move(formatArgCombiner.getFormattedString());
     }
-
 }
