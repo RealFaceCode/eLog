@@ -31,6 +31,8 @@ eLog is a C++20 logging library to log formatted, colorized terminal logs, file 
 
 ## Performance
 
+[Take a look here](performance.md)
+
 ## Disciption
 
 ## How to use
