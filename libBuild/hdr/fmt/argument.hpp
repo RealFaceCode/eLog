@@ -15,6 +15,7 @@ namespace elog::fmt
         Bool,
         Pointer,
         Container,
+        Class
     };
 
     struct Argument

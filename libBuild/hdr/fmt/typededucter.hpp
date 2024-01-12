@@ -27,6 +27,8 @@ namespace elog::fmt
                 type = ArgumentType::Pointer;
             else if constexpr (is_container_v<T>)
                 type = ArgumentType::Container;
+            else if constexpr (std::is_class_v<T>)
+                type = ArgumentType::Class;
             else
                 throw TypeDeductionException("Type deduction failed!");
         }
