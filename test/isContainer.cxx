@@ -1,7 +1,10 @@
-#include "../libBuild/hdr/fmt.hpp"
+#include "../libBuild/hdr/fmt/checks.hpp"
 #include "assert.h"
 using namespace elog::fmt;
 #include <tuple>
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 void test_is_container()
 {

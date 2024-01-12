@@ -3,8 +3,11 @@
 #include <functional>
 #include <string>
 #include <filesystem>
+#include <cstring>
 
-#include "fmt.hpp"
+#include "fmt/fmt.hpp"
+#include "fmt/formatstring.hpp"
+#include "fmt/generalhelper.hpp"
 #include "state.hpp"
 #include "logcolor.hpp"
 #include "loglevel.hpp"
@@ -118,7 +121,7 @@ namespace elog::structs
             }
         }
 
-        static void FillLogInfo(std::stringbuf& buf, const elog::fmt::SourceLoc& loc)
+        static void FillLogInfo(std::stringbuf& buf, const std::source_location& loc)
         {
             if(!internal::IsFlagSet(enums::StateFlag::FMT_FILE) 
             || !internal::IsFlagSet(enums::StateFlag::FMT_FUNCTION) 
