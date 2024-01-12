@@ -5,7 +5,8 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
-
+#include <sstream>
+#include <math.h>
 
 namespace elog::fmt
 {
@@ -90,11 +91,11 @@ namespace elog::fmt
 
         while (pos != std::string::npos)
         {
-            positions.push_back(pos);
+            positions.emplace_back(pos);
             pos = str.find(substr, pos + 1);
         }
 
-        return positions;
+        return std::move(positions);
     }
 
     size_t FindNextNonNumerical(const std::string_view& str, size_t pos)
@@ -146,5 +147,64 @@ namespace elog::fmt
     std::string Time(std::string_view format)
     {
         return std::move(Date(format));
+    }
+
+    std::string ConvertInteger(long double num)
+    {
+        std::string str = "";
+        while (num > 0)
+        {
+            auto rem = static_cast<int>(num) % 8;
+            str = std::to_string(rem) + str;
+            num /= 8;
+        }
+        return std::move(str);
+    }
+
+    std::string ConvertFractional(long double num, int precision)
+    {
+        std::string str = ".";
+        while (precision > 0)
+        {
+            num *= 8;
+            int integer = static_cast<int>(num);
+            str += std::to_string(integer);
+            num -= integer;
+            precision--;
+        }
+        return std::move(str);
+    }
+
+    std::string DecimalToOctal(long double num, int precision)
+    {
+        long double integer = static_cast<int>(num);
+        long double dec = num - integer;
+        std::string s1 = ConvertInteger(integer);
+        std::string s2 = ConvertFractional(dec, precision);
+        return std::move((s1 + s2));
+    }
+
+    
+    std::string DecToScientific(long long num, size_t precision, bool upper)
+    {
+        auto exponent = (int)::log10(::fabs((double)num));
+        double mantissa = (double)num / ::pow(10, exponent);
+
+        std::stringstream ss;
+        if(precision != 0)
+            ss << std::setprecision(precision) << std::fixed << mantissa;
+        else
+            ss <<  std::setprecision(6) << std::fixed << mantissa;
+
+        if(upper)
+            ss << "E";
+        else
+            ss << "e";
+            
+        if(exponent <= 9)
+            ss << "+0" << exponent;
+        else
+            ss << "+" << exponent;
+        return std::move(ss.str());
     }
 }

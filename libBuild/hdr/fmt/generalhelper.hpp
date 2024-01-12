@@ -17,4 +17,8 @@ namespace elog::fmt
     void PrintFormatList(const FormatPack& formatList);
     std::string Date(std::string_view format = "%Y-%m-%d");
     std::string Time(std::string_view format = "%H:%M:%S");
+    std::string ConvertInteger(long double num);
+    std::string ConvertFractional(long double num, int precision);
+    std::string DecimalToOctal(long double num, int precision);
+    std::string DecToScientific(long long num, size_t precision, bool upper);
 }
