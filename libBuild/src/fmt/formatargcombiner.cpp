@@ -4,6 +4,7 @@
 #include "fmt/formatstring.hpp"
 #include "fmt/argument.hpp"
 #include "fmt/fmt.hpp"
+#include "fmt/generalhelper.hpp"
 
 #include <iomanip>
 #include <sstream>
@@ -11,6 +12,17 @@
 
 namespace elog::fmt
 {
+
+    char space_out::do_thousands_sep() const
+    { 
+        return '\'';
+    }
+
+    std::string space_out::do_grouping() const
+    { 
+        return "\3"; 
+    }
+
     FormatArgCombiner::FormatArgCombiner(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList)
     {
         combine(format, argList, formatList);
@@ -90,7 +102,7 @@ namespace elog::fmt
         }
     }
 
-    void FormatArgCombiner::reform(Argument& arg, const FormatType& format) const
+    void FormatArgCombiner::reform(Argument& arg, FormatType& format) const
     {
         if(format.specifier.first)
         {
@@ -142,11 +154,31 @@ namespace elog::fmt
                 }
                 break;
             case FormatSpecifier::scientific:
-                ss << std::scientific << std::stof(arg.value.view().data());
+            {
+                auto view = arg.value.view();
+                if(arg.type == ArgumentType::Double)
+                    ss << std::fixed << std::scientific << (format.precision.first ? std::setprecision(format.precision.second) : std::setprecision(6)) <<  std::stod(view.data());
+                else if(arg.type == ArgumentType::Float)
+                    ss << std::fixed << std::scientific << (format.precision.first ? std::setprecision(format.precision.second) : std::setprecision(6)) << std::stof(view.data());
+                else
+                    ss << fmt::DecToScientific(std::stoll(view.data()), (format.precision.first ? format.precision.second : 6), false);
+
+                format.precision.first = false;
                 break;
+            }
             case FormatSpecifier::Scientific:
-                ss << std::scientific << std::uppercase << std::stof(arg.value.view().data());
+            {
+                auto view = arg.value.view();
+                if(arg.type == ArgumentType::Double)
+                    ss << std::fixed << std::scientific << std::uppercase << (format.precision.first ? std::setprecision(format.precision.second) : std::setprecision(6)) << std::uppercase << std::stod(view.data());
+                else if(arg.type == ArgumentType::Float)
+                    ss << std::fixed << std::scientific << std::uppercase << (format.precision.first ? std::setprecision(format.precision.second) : std::setprecision(6)) << std::uppercase << std::stof(view.data());
+                else
+                    ss << fmt::DecToScientific(std::stoll(view.data()), (format.precision.first ? format.precision.second : 6), true);
+
+                format.precision.first = false;
                 break;
+            }
             case FormatSpecifier::floating:
                 ss << arg.value.view().data();
                 break;
@@ -157,8 +189,17 @@ namespace elog::fmt
                 throw FormatException("Format specifier [General] is not supported");
                 break;
             case FormatSpecifier::localized:
-                ss << std::use_facet<std::numpunct<char>>(ss.getloc()).thousands_sep() << arg.value.view();
+            {
+                auto view = arg.value.view();
+                ss.imbue(std::locale(ss.getloc(), new space_out));
+                if(arg.type == ArgumentType::Double)
+                    ss << std::fixed << std::stod(view.data());
+                else if(arg.type == ArgumentType::Float)
+                    ss << std::fixed << std::stof(view.data());
+                else
+                    ss << std::stoll(view.data());
                 break;
+            }
             case FormatSpecifier::string:
                 ss << arg.value.view();
                 break;
@@ -211,7 +252,7 @@ namespace elog::fmt
         const auto& formats = formatList.formats;
         size_t index = 0;
 
-        for(const auto& formatType : formats)
+        for(auto formatType : formats)
         {
             size_t pos = formattedString.find(formatType.format);
             if(pos == std::string::npos)
