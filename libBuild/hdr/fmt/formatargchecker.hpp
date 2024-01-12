@@ -1,11 +1,10 @@
 #pragma once
 
 #include <vector>
-
+#include <string_view>
 
 namespace elog::fmt
 {
-    struct FormatString;
     struct FormatPack;
     struct Argument;
 
@@ -16,15 +15,15 @@ namespace elog::fmt
     {
     public:
         FormatArgCheck() = default;
-        FormatArgCheck(const FormatString& fmt, std::vector<Argument>& argList, const FormatPack& formatList);
+        FormatArgCheck(std::string_view fmt, std::vector<Argument>& argList, const FormatPack& formatList);
         ~FormatArgCheck() = default;
 
     private:
-        void checkArgCount(const FormatString& fmt) const;
+        void checkArgCount(std::string_view fmt) const;
         void checkIndex();
         void checkSpecifierSwitch(FormatSpecifier formatSpecifier, ArgumentType argType, size_t index) const;
         void checkSpecifier() const;
-        void check(const FormatString& fmt);
+        void check(std::string_view fmt);
 
         bool allTrue = false;
         bool allFalse = false;

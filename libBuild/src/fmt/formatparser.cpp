@@ -4,7 +4,7 @@
 
 namespace elog::fmt
 {
-    FormatParser::FormatParser(const FormatString& format)
+    FormatParser::FormatParser(std::string_view format)
     {
         parseFormat(format);
     }
@@ -14,11 +14,10 @@ namespace elog::fmt
         return mFormatStrings;
     }
 
-    void FormatParser::parseFormat(const FormatString& format)
+    void FormatParser::parseFormat(std::string_view format)
     {
-        std::string_view formatString = format.format.view();
-        std::vector<size_t> beginPositions = FindAllOf(formatString, "{");
-        std::vector<size_t> endPositions = FindAllOf(formatString, "}");
+        std::vector<size_t> beginPositions = FindAllOf(format, "{");
+        std::vector<size_t> endPositions = FindAllOf(format, "}");
 
         if (beginPositions.size() != endPositions.size())
         {
@@ -31,7 +30,7 @@ namespace elog::fmt
             size_t endPos = endPositions[i];
             size_t length = endPos - beginPos + 1;
             FormatType formatType;
-            formatType.format = formatString.substr(beginPos, length);
+            formatType.format = format.substr(beginPos, length);
             mFormatStrings.formats.push_back(formatType);
         }
     }

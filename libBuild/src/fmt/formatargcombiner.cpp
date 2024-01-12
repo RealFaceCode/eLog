@@ -23,7 +23,7 @@ namespace elog::fmt
         return "\3"; 
     }
 
-    FormatArgCombiner::FormatArgCombiner(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList)
+    FormatArgCombiner::FormatArgCombiner(std::string_view format, std::vector<Argument>& argList, const FormatPack& formatList)
     {
         combine(format, argList, formatList);
     }
@@ -246,9 +246,9 @@ namespace elog::fmt
         alignment(arg, format);
     }
 
-    void FormatArgCombiner::combine(const FormatString& formatString, std::vector<Argument>& argList, const FormatPack& formatList)
+    void FormatArgCombiner::combine(std::string_view format, std::vector<Argument>& argList, const FormatPack& formatList)
     {
-        formattedString = formatString.format.str();
+        formattedString = format;
         const auto& formats = formatList.formats;
         size_t index = 0;
 
@@ -256,7 +256,7 @@ namespace elog::fmt
         {
             size_t pos = formattedString.find(formatType.format);
             if(pos == std::string::npos)
-                throw FormatStringException(Format("Format string [{}] is invalid", formatString.format));
+                throw FormatStringException(Format("Format string [{}] is invalid", format));
 
             if(formatType.index.first)
                 index = formatType.index.second;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "formatpack.hpp"
-#include "formatstring.hpp"
+#include <string_view>
 
 namespace elog::fmt
 {
@@ -9,12 +9,12 @@ namespace elog::fmt
     {
     public:
         FormatParser() = default;
-        explicit FormatParser(const FormatString& format);
+        explicit FormatParser(std::string_view format);
         ~FormatParser() = default;
         FormatPack& getFormatList();
 
     private:
-        void parseFormat(const FormatString& format);
+        void parseFormat(std::string_view format);
 
         FormatPack mFormatStrings;
     };

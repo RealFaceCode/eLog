@@ -10,17 +10,17 @@
 
 namespace elog::fmt
 {
-    FormatArgCheck::FormatArgCheck(const FormatString& fmt, std::vector<Argument>& argList, const FormatPack& formatList)
+    FormatArgCheck::FormatArgCheck(std::string_view fmt, std::vector<Argument>& argList, const FormatPack& formatList)
     : mArgList(argList), mFormatList(formatList)
     {
         check(fmt);
     }
 
-    void FormatArgCheck::checkArgCount(const FormatString& fmt) const
+    void FormatArgCheck::checkArgCount(std::string_view fmt) const
     {
         if(mFormatList.count > mArgList.size())
             throw ArgumentException(Format("Too few arguments passed to format string:\n\t[{}]\nExpected [{}] arguments but got [{}] arguments",
-                                            fmt.format,  mArgList.size(), mFormatList.formats.size()));
+                                            fmt,  mArgList.size(), mFormatList.formats.size()));
     }
 
     void FormatArgCheck::checkIndex()
@@ -118,7 +118,7 @@ namespace elog::fmt
         }
     }
 
-    void FormatArgCheck::check(const FormatString& fmt)
+    void FormatArgCheck::check(std::string_view fmt)
     {
         checkArgCount(fmt);
         checkIndex();

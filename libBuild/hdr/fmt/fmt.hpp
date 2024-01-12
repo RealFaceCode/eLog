@@ -15,6 +15,7 @@ namespace elog::fmt
     template<typename... Args>
     inline std::string Format(std::string_view format, Args&& ...args)
     {
+        
         FormatParser formatParser(format);
         FormatPack& formatList = formatParser.getFormatList();
 

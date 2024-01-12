@@ -21,7 +21,7 @@ namespace elog::fmt
     {
     public:
         FormatArgCombiner() = default;
-        FormatArgCombiner(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList);
+        FormatArgCombiner(std::string_view format, std::vector<Argument>& argList, const FormatPack& formatList);
         ~FormatArgCombiner() = default;
 
         std::string& getFormattedString();
@@ -30,7 +30,7 @@ namespace elog::fmt
         void precision(Argument& argument, const FormatType& format) const;
         void alignment(Argument& argument, const FormatType& format) const;
         void reform(Argument& argument, FormatType& format) const;
-        void combine(const FormatString& format, std::vector<Argument>& argList, const FormatPack& formatList);
+        void combine(std::string_view, std::vector<Argument>& argList, const FormatPack& formatList);
 
         std::string formattedString = "";
     };
