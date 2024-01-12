@@ -16,6 +16,28 @@ namespace elog::fmt
             ss << value;
             return std::move(ss.str());
         }
+
+        static void format_to(std::stringbuf& buf, const T& value)
+        {
+            std::ostringstream ss;
+            ss << value;
+            buf.sputn(ss.str().c_str(), ss.str().size());
+        }
+    };
+
+    template<>
+    struct Formatter<std::stringbuf>
+    {
+        static std::string format(const std::stringbuf& value)
+        {
+            return std::move(value.str());
+        }
+
+        static void format_to(std::stringbuf& buf, const std::stringbuf& value)
+        {
+            auto str = value.view();
+            buf.sputn(str.data(), str.size());
+        }
     };
 
     template<typename T>
@@ -37,6 +59,23 @@ namespace elog::fmt
             buf.sputc(']');
             return std::move(buf.str());
         }
+
+        static void format_to(std::stringbuf& buf, const std::vector<T>& value)
+        {
+            buf.sputc('[');
+            for (auto& item : value)
+            {
+                if(&item == &value.back())
+                    Formatter<T>::format_to(buf, item);
+                else
+                {
+                    Formatter<T>::format_to(buf, item);
+                    buf.sputn(", ", 2);
+                }
+                
+            }
+            buf.sputc(']');
+        }
     };
     template<typename T, typename U>
     struct Formatter<std::pair<T, U>>
@@ -53,6 +92,15 @@ namespace elog::fmt
             buf.sputc(']');
             return std::move(buf.str());
         }
+
+        static void format_to(std::stringbuf& buf, const std::pair<T, U>& value)
+        {
+            buf.sputn("[First: ", 8);
+            Formatter<T>::format_to(buf, value.first);
+            buf.sputn(", Second: ", 10);
+            Formatter<U>::format_to(buf, value.second);
+            buf.sputc(']');
+        }
     };
 
     template<typename T, typename U>
@@ -67,6 +115,17 @@ namespace elog::fmt
                 str = Formatter<std::pair<T, U>>::format(item);
             buf.sputc('}');
             return std::move(buf.str());
+        }
+
+        static void format_to(std::stringbuf& buf, const std::unordered_map<T, U>& value)
+        {
+            buf.sputc('{');
+            for (auto& item : value)
+            {
+                Formatter<std::pair<T, U>>::format_to(buf, item);
+                buf.sputn(", ", 2);
+            }
+            buf.sputc('}');
         }
     };
 }
