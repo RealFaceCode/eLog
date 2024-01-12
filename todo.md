@@ -1,10 +1,16 @@
 # Current TODO´s
 
-- [ ] Terminal logging
-- [ ] Buffer logging
-- [ ] File logging
-- [ ] Threaded logging only
-- [ ] Colorred logging
-- [ ] Log levels
-- [ ] Log info
-- [ ] labled logs
+## elog
+
+- [x] Terminal logging
+- [x] Buffer logging
+- [x] File logging
+- [x] Threaded logging
+- [ ] Colored logging
+- [x] Log levels
+- [x] Log info
+- [x] labled logs
+
+## fmt
+
+- [x] boost performance
