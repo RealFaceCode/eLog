@@ -4,6 +4,7 @@
 #include "argument.hpp"
 #include "exceptions.hpp"
 #include "formatter.hpp"
+#include "typededucter.hpp"
 
 #include <cstring>
 
@@ -46,6 +47,7 @@ namespace elog::fmt
     {
         Argument argument;
         Formatter<Arg>::format_to(argument.value, arg);
+        TypeDeducter<Arg>::deduct(argument.type);
         mArguments.push_back(std::move(argument));
     }
 
