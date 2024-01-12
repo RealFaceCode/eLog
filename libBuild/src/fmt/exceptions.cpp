@@ -43,4 +43,18 @@ namespace elog::fmt
     {
         return mLoc;
     }
+
+    TypeDeductionException::TypeDeductionException(const std::string& message, const std::source_location& loc)
+    : mMessage(message), mLoc(loc)
+    {}
+
+    const char* TypeDeductionException::what() const noexcept
+    {
+        return mMessage.c_str();
+    }
+
+    const std::source_location& TypeDeductionException::getLoc() const noexcept
+    {
+        return mLoc;
+    }
 }
