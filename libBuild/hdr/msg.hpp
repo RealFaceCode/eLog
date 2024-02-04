@@ -108,14 +108,14 @@ namespace elog::structs
         {
             if(internal::IsFlagSet(enums::StateFlag::FMT_DATE))
             {
-                auto date = fmt::Date(internal::GetDateFormat());
+                auto date = fmt::Date(internal::GetDateFormatStr());
                 buf.sputn(date.data(), date.size());
                 buf.sputc(' ');
             }
 
             if(internal::IsFlagSet(enums::StateFlag::FMT_TIME))
             {
-                auto time = fmt::Time(internal::GetTimeFormat());
+                auto time = fmt::Time(internal::GetTimeFormatStr());
                 buf.sputn(time.data(), time.size());
                 buf.sputc(' ');
             }

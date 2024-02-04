@@ -59,13 +59,13 @@ namespace elog
             return state.resetColor;
         }
 
-        const std::string& GetTimeFormat()
+        const std::string& GetTimeFormatStr()
         {
             auto& state = *internal::GetState().get();
             return state.timeFormat;
         }
 
-        const std::string& GetDateFormat()
+        const std::string& GetDateFormatStr()
         {
             auto& state = *internal::GetState().get();
             return state.dateFormat;

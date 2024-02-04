@@ -97,8 +97,8 @@ namespace elog
         std::shared_ptr<structs::State> GetState();
         bool IsFlagSet(enums::StateFlag flag);
         const std::string& GetResetColor();
-        const std::string& GetTimeFormat();
-        const std::string& GetDateFormat();
+        const std::string& GetTimeFormatStr();
+        const std::string& GetDateFormatStr();
     }
 
     void Init();
