@@ -40,7 +40,7 @@ namespace elog
     inline void Debug(fmt::FormatString format, Params&&... params)
     {
         auto constexpr label = lit.value;
-        LogCustom("DEBUG", "", std::move(format), std::forward<Params>(params)...);
+        LogCustom("DEBUG", label, std::move(format), std::forward<Params>(params)...);
     }
 
     template<structs::StringLiteral lit, typename... Params>
